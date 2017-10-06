@@ -286,65 +286,61 @@ class rbushbase(object):
         if not len(self.data.children):
             ## save as is if tree is empty
             self.data = node
-        elif (self.data.height === node.height) {
-            // split root if trees have the same height
-            this._splitRoot(this.data, node);
+        elif (self.data.height == node.height):
+            ## split root if trees have the same height
+            self._splitRoot(self.data, node)
+        else:
+            if (self.data.height < node.height):
+                ## swap trees if inserted one is bigger
+                tmpNode = self.data
+                self.data = node
+                node = tmpNode
+            ## insert the small tree into the large tree at appropriate level
+            self._insert(node, self.data.height - node.height - 1, true)
+        return self
 
-        } else {
-            if (this.data.height < node.height) {
-                // swap trees if inserted one is bigger
-                var tmpNode = this.data;
-                this.data = node;
-                node = tmpNode;
-            }
+    def insert(item):
+        if item:
+            self._insert(item, self.data.height - 1)
+        return self
 
-            // insert the small tree into the large tree at appropriate level
-            this._insert(node, this.data.height - node.height - 1, true);
-        }
+    def clear():
+        self.data = createNode([])
+        return self
 
-        return this;
-    },
+    def remove(item, equalsFn):
+        if not item:
+            return self
 
-    insert: function (item) {
-        if (item) this._insert(item, this.data.height - 1);
-        return this;
-    },
+        node = self.data
+        bbox = self.toBBox(item)
+        path = []
+        indexes = []
+        i = None
+        parent = None
+        index = None
+        goingUp = None
 
-    clear: function () {
-        this.data = createNode([]);
-        return this;
-    },
+>>> PAREI AQUI!
+>>> VERIFICAR A IMPLEMENTACAO DE 'Node.children':
+>>> alguns metodos the arrays do javascript nao existem para listas python!
 
-    remove: function (item, equalsFn) {
-        if (!item) return this;
-
-        var node = this.data,
-            bbox = this.toBBox(item),
-            path = [],
-            indexes = [],
-            i, parent, index, goingUp;
-
-        // depth-first iterative tree traversal
-        while (node || path.length) {
-
-            if (!node) { // go up
-                node = path.pop();
-                parent = path[path.length - 1];
-                i = indexes.pop();
-                goingUp = true;
-            }
-
-            if (node.leaf) { // check current node
-                index = findItem(item, node.children, equalsFn);
-
-                if (index !== -1) {
-                    // item found, remove the item and condense tree upwards
-                    node.children.splice(index, 1);
-                    path.push(node);
-                    this._condense(path);
-                    return this;
-                }
-            }
+        ## depth-first iterative tree traversal
+        while node or len(path):
+            if not node: ## go up
+                node = path.pop()
+                parent = path[len(path) - 1]
+                i = indexes.pop()
+                goingUp = True
+            if node.leaf: ## check current node
+                index = findItem(item, node.children, equalsFn)
+                if index != -1:
+                    ## item found, remove the item and condense tree upwards
+                    #XXX 'splice' method is a method for javascript array
+                    node.children.splice(index, 1)
+                    path.append(node)
+                    self._condense(path)
+                    return self
 
             if (!goingUp && !node.leaf && contains(node, bbox)) { // go down
                 path.push(node);
