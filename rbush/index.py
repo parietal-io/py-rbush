@@ -2,6 +2,15 @@ import quickselect
 
 INFINITY = float('inf')
 
+# Javascript arrays have a 'splice' method,
+#  this is the equivalent for Python lists
+def splice(list_,insert_position,remove_how_many,*items_to_insert):
+    for i in range(remove_how_many):
+        _= list_.pop(insert_position)
+    for item in items_to_insert[::-1]:
+        list_.insert(insert_position, item)
+    return #list_
+
 # function createNode(children) {
 #     return {
 #         children: children,
@@ -213,13 +222,36 @@ def multiSelect(arr, left, right, n, compare):
 #
 #     this.clear();
 # }
+def rbush(self, maxEntries, format_):
+    if not isinstance(self,Rbush):
+        return Rbush(maxEntries, format_);
+
+    ## max entries in a node is 9 by default; min node fill is 40% for best performance
+    self._maxEntries = max(4, maxEntries or 9);
+    self._minEntries = max(2, math.ceil(self._maxEntries * 0.4));
+
+    if (format_):
+        self._initFormat(format_);
+
+    self.clear()
 
 
-class rbushbase(object):
+class Rbush(object):
 
-    # I understand all is the equivalent to __init__
-    def all(self):
+    # I understand 'all' is the equivalent to __init__
+    def __init__(self):
         return self._all(self.data, [])
+
+    def _init(node, result):
+        nodesToSearch = []
+        while node:
+            if node.leaf:
+                # result.push.apply(result, node.children);
+                result.extend(node.children)
+            else:
+                nodesToSearch.extend(node.children)
+            node = nodesToSearch.pop(-1)
+        return result
 
     def search(self,bbox):
         node = self.data
@@ -272,7 +304,7 @@ class rbushbase(object):
     def load(data):
         if not (data && len(data)):
             return self
-        if (data.length < this._minEntries):
+        if (data.length < self_minEntries):
             len_ = len(data)
             for i in range(0,len_):
                 self.insert(data[i]) #XXX this.insert? define 'insert' method for rbush
@@ -321,10 +353,6 @@ class rbushbase(object):
         index = None
         goingUp = None
 
->>> PAREI AQUI!
->>> VERIFICAR A IMPLEMENTACAO DE 'Node.children':
->>> alguns metodos the arrays do javascript nao existem para listas python!
-
         ## depth-first iterative tree traversal
         while node or len(path):
             if not node: ## go up
@@ -337,304 +365,281 @@ class rbushbase(object):
                 if index != -1:
                     ## item found, remove the item and condense tree upwards
                     #XXX 'splice' method is a method for javascript array
-                    node.children.splice(index, 1)
+                    # node.children.splice(index, 1)
+                    splice(node.children, index, 1)
                     path.append(node)
                     self._condense(path)
                     return self
 
-            if (!goingUp && !node.leaf && contains(node, bbox)) { // go down
-                path.push(node);
-                indexes.push(i);
-                i = 0;
-                parent = node;
-                node = node.children[0];
+            if not goingUp and not node.leaf and contains(node, bbox): ## go down
+                path.append(node)
+                indexes.append(i)
+                i = 0
+                parent = node
+                node = node.children[0]
 
-            } else if (parent) { // go right
-                i++;
-                node = parent.children[i];
-                goingUp = false;
+            elif (parent): ## go right
+                i=i+1
+                node = parent.children[i]
+                goingUp = False
 
-            } else node = null; // nothing found
-        }
+            else:
+                node = null ## nothing found
 
-        return this;
-    },
+        return this
 
-    toBBox: function (item) { return item; },
+    def toBBox(item):
+        return item
 
-    compareMinX: compareNodeMinX,
-    compareMinY: compareNodeMinY,
+    compareMinX = compareNodeMinX
+    compareMinY = compareNodeMinY
 
-    toJSON: function () { return this.data; },
+    #XXX 'toJSON' returns 'data'? That means that data is in 'json' format and is being dumpd
+    def toJSON():
+        return self.data
 
-    fromJSON: function (data) {
-        this.data = data;
-        return this;
-    },
+    def fromJSON(data):
+        self.data = data
+        return self
 
-    def _all(node, result):
-        var nodesToSearch = [];
-        while (node) {
-            if (node.leaf) result.push.apply(result, node.children);
-            else nodesToSearch.push.apply(nodesToSearch, node.children);
+    def _build(items, left, right, height):
+        N = right - left + 1
+        M = self._maxEntries
+        node = None
 
-            node = nodesToSearch.pop();
-        }
-        return result
+        if N <= M:
+            ## reached leaf level; return leaf
+            node = createNode(items[left : right + 1])
+            calcBBox(node, self.toBBox)
+            return node
 
-    _build: function (items, left, right, height) {
+        if not height:
+            ## target height of the bulk-loaded tree
+            height = math.ceil(math.log(N) / math.log(M))
 
-        var N = right - left + 1,
-            M = this._maxEntries,
-            node;
+            ## target number of root entries to maximize storage utilization
+            M = math.ceil(N / math.pow(M, height - 1))
 
-        if (N <= M) {
-            // reached leaf level; return leaf
-            node = createNode(items.slice(left, right + 1));
-            calcBBox(node, this.toBBox);
-            return node;
-        }
+        node = createNode([])
+        node.leaf = False
+        node.height = height
 
-        if (!height) {
-            // target height of the bulk-loaded tree
-            height = Math.ceil(Math.log(N) / Math.log(M));
+        ## split the items into M mostly square tiles
+        N2 = math.ceil(N / M)
+        N1 = N2 * math.ceil(math.sqrt(M))
+        i = None
+        j = None
+        right2 = None
+        right3 = None
 
-            // target number of root entries to maximize storage utilization
-            M = Math.ceil(N / Math.pow(M, height - 1));
-        }
+        multiSelect(items, left, right, N1, self.compareMinX)
 
-        node = createNode([]);
-        node.leaf = false;
-        node.height = height;
+        for i in range(left, right+1, N1):
+            right2 = min(i + N1 - 1, right)
+            multiSelect(items, i, right2, N2, self.compareMinY)
+            for j in range(i, right2+1, N2):
+                right3 = min(j + N2 - 1, right2)
+                ## pack each entry recursively
+                node.children.append(self._build(items, j, right3, height - 1))
+        calcBBox(node, self.toBBox)
+        return node
 
-        // split the items into M mostly square tiles
+    def _chooseSubtree(bbox, node, level, path):
+        i = None
+        len = None
+        child = None
+        targetNode = None
+        area = None
+        enlargement = None
+        minArea = None
+        minEnlargement = None
 
-        var N2 = Math.ceil(N / M),
-            N1 = N2 * Math.ceil(Math.sqrt(M)),
-            i, j, right2, right3;
+        while True:
+            path.append(node)
 
-        multiSelect(items, left, right, N1, this.compareMinX);
+            if node.leaf or (len(path)-1 == level):
+                break
 
-        for (i = left; i <= right; i += N1) {
+            minEnlargement = INFINITY
+            minArea = INFINITY
 
-            right2 = Math.min(i + N1 - 1, right);
+            len_ = len(node.children)
+            for i in range(0, len_):
+                child = node.children[i]
+                area = bboxArea(child)
+                enlargement = enlargedArea(bbox, child) - area
 
-            multiSelect(items, i, right2, N2, this.compareMinY);
+                ## choose entry with the least area enlargement
+                if (enlargement < minEnlargement):
+                    minEnlargement = enlargement
+                    minArea = area if area < minArea else minArea
+                    targetNode = child
 
-            for (j = i; j <= right2; j += N2) {
+                else:
+                    if (enlargement === minEnlargement):
+                        ## otherwise choose one with the smallest area
+                        if (area < minArea):
+                            minArea = area
+                            targetNode = child
 
-                right3 = Math.min(j + N2 - 1, right2);
+            node = targetNode or node.children[0]
 
-                // pack each entry recursively
-                node.children.push(this._build(items, j, right3, height - 1));
-            }
-        }
+        return node
 
-        calcBBox(node, this.toBBox);
+    def _insert(item, level, isNode):
+        toBBox = self.toBBox
+        bbox = item if isNode else toBBox(item)
+        insertPath = []
 
-        return node;
-    },
+        ## find the best node for accommodating the item, saving all nodes along the path too
+        node = self._chooseSubtree(bbox, self.data, level, insertPath)
 
-    _chooseSubtree: function (bbox, node, level, path) {
+        ## put the item into the node
+        node.children.append(item)
+        extend(node, bbox)
 
-        var i, len, child, targetNode, area, enlargement, minArea, minEnlargement;
+        ## split on node overflow; propagate upwards if necessary
+        while level >= 0:
+            if len(insertPath[level].children) > self._maxEntries:
+                self._split(insertPath, level);
+                level=level-1
+            else:
+                break
 
-        while (true) {
-            path.push(node);
+        ## adjust bboxes along the insertion path
+        self._adjustParentBBoxes(bbox, insertPath, level);
 
-            if (node.leaf || path.length - 1 === level) break;
+    ## split overflowed node into two
+    def _split(insertPath, level):
+        node = insertPath[level]
+        M = len(node.children)
+        m = self._minEntries
 
-            minArea = minEnlargement = Infinity;
+        self._chooseSplitAxis(node, m, M)
 
-            for (i = 0, len = node.children.length; i < len; i++) {
-                child = node.children[i];
-                area = bboxArea(child);
-                enlargement = enlargedArea(bbox, child) - area;
+        splitIndex = self._chooseSplitIndex(node, m, M)
 
-                // choose entry with the least area enlargement
-                if (enlargement < minEnlargement) {
-                    minEnlargement = enlargement;
-                    minArea = area < minArea ? area : minArea;
-                    targetNode = child;
+        newNode = createNode(splice(node.children, splitIndex, node.children.length - splitIndex))
+        newNode.height = node.height
+        newNode.leaf = node.leaf
 
-                } else if (enlargement === minEnlargement) {
-                    // otherwise choose one with the smallest area
-                    if (area < minArea) {
-                        minArea = area;
-                        targetNode = child;
-                    }
-                }
-            }
+        calcBBox(node, self.toBBox)
+        calcBBox(newNode, self.toBBox)
 
-            node = targetNode || node.children[0];
-        }
+        if (level):
+            insertPath[level - 1].children.append(newNode)
+        else:
+            self_splitRoot(node, newNode)
 
-        return node;
-    },
+    def _splitRoot(node, newNode):
+        ## split root node
+        self.data = createNode([node, newNode])
+        self.data.height = node.height + 1
+        self.data.leaf = False
+        calcBBox(self.data, self.toBBox);
 
-    _insert: function (item, level, isNode) {
+    def _chooseSplitIndex(node, m, M):
+        i = None
+        bbox1 = None
+        bbox2 = None
+        overlap = None
+        area = None
+        minOverlap = None
+        minArea = None
+        index = None
 
-        var toBBox = this.toBBox,
-            bbox = isNode ? item : toBBox(item),
-            insertPath = [];
+        minArea = INFINITY
+        minOverlap = INFINITY
 
-        // find the best node for accommodating the item, saving all nodes along the path too
-        var node = this._chooseSubtree(bbox, this.data, level, insertPath);
-
-        // put the item into the node
-        node.children.push(item);
-        extend(node, bbox);
-
-        // split on node overflow; propagate upwards if necessary
-        while (level >= 0) {
-            if (insertPath[level].children.length > this._maxEntries) {
-                this._split(insertPath, level);
-                level--;
-            } else break;
-        }
-
-        // adjust bboxes along the insertion path
-        this._adjustParentBBoxes(bbox, insertPath, level);
-    },
-
-    // split overflowed node into two
-    _split: function (insertPath, level) {
-
-        var node = insertPath[level],
-            M = node.children.length,
-            m = this._minEntries;
-
-        this._chooseSplitAxis(node, m, M);
-
-        var splitIndex = this._chooseSplitIndex(node, m, M);
-
-        var newNode = createNode(node.children.splice(splitIndex, node.children.length - splitIndex));
-        newNode.height = node.height;
-        newNode.leaf = node.leaf;
-
-        calcBBox(node, this.toBBox);
-        calcBBox(newNode, this.toBBox);
-
-        if (level) insertPath[level - 1].children.push(newNode);
-        else this._splitRoot(node, newNode);
-    },
-
-    _splitRoot: function (node, newNode) {
-        // split root node
-        this.data = createNode([node, newNode]);
-        this.data.height = node.height + 1;
-        this.data.leaf = false;
-        calcBBox(this.data, this.toBBox);
-    },
-
-    _chooseSplitIndex: function (node, m, M) {
-
-        var i, bbox1, bbox2, overlap, area, minOverlap, minArea, index;
-
-        minOverlap = minArea = Infinity;
-
-        for (i = m; i <= M - m; i++) {
-            bbox1 = distBBox(node, 0, i, this.toBBox);
-            bbox2 = distBBox(node, i, M, this.toBBox);
+        for i in range(m, M - m + 1):
+            bbox1 = distBBox(node, 0, i, selftoBBox);
+            bbox2 = distBBox(node, i, M, self.toBBox);
 
             overlap = intersectionArea(bbox1, bbox2);
             area = bboxArea(bbox1) + bboxArea(bbox2);
 
-            // choose distribution with minimum overlap
-            if (overlap < minOverlap) {
+            ## choose distribution with minimum overlap
+            if (overlap < minOverlap):
                 minOverlap = overlap;
                 index = i;
 
                 minArea = area < minArea ? area : minArea;
 
-            } else if (overlap === minOverlap) {
-                // otherwise choose distribution with minimum area
-                if (area < minArea) {
-                    minArea = area;
-                    index = i;
-                }
-            }
-        }
+            else:
+                if (overlap == minOverlap):
+                    ## otherwise choose distribution with minimum area
+                    if (area < minArea):
+                        minArea = area
+                        index = i
 
         return index;
-    },
 
-    // sorts node children by the best axis for split
-    _chooseSplitAxis: function (node, m, M) {
+    ## sorts node children by the best axis for split
+    def _chooseSplitAxis(node, m, M):
+        compareMinX = self.compareMinX if node.leaf else compareNodeMinX
+        compareMinY = self.compareMinY if node.leaf else compareNodeMinY
+        xMargin = self._allDistMargin(node, m, M, compareMinX),
+        yMargin = self._allDistMargin(node, m, M, compareMinY);
 
-        var compareMinX = node.leaf ? this.compareMinX : compareNodeMinX,
-            compareMinY = node.leaf ? this.compareMinY : compareNodeMinY,
-            xMargin = this._allDistMargin(node, m, M, compareMinX),
-            yMargin = this._allDistMargin(node, m, M, compareMinY);
+        ## if total distributions margin value is minimal for x, sort by minX,
+        ## otherwise it's already sorted by minY
+        if (xMargin < yMargin):
+            node.children.sort(compareMinX)
 
-        // if total distributions margin value is minimal for x, sort by minX,
-        // otherwise it's already sorted by minY
-        if (xMargin < yMargin) node.children.sort(compareMinX);
-    },
+    ## total margin of all possible split distributions where each node is at least m full
+    def _allDistMargin(node, m, M, compare):
+        node.children.sort(compare)
+        toBBox = self.toBBox
+        leftBBox = distBBox(node, 0, m, toBBox)
+        rightBBox = distBBox(node, M - m, M, toBBox)
+        margin = bboxMargin(leftBBox) + bboxMargin(rightBBox)
+        i = None
+        child = None
 
-    // total margin of all possible split distributions where each node is at least m full
-    _allDistMargin: function (node, m, M, compare) {
-
-        node.children.sort(compare);
-
-        var toBBox = this.toBBox,
-            leftBBox = distBBox(node, 0, m, toBBox),
-            rightBBox = distBBox(node, M - m, M, toBBox),
-            margin = bboxMargin(leftBBox) + bboxMargin(rightBBox),
-            i, child;
-
-        for (i = m; i < M - m; i++) {
+        for i in range(m, M - m):
             child = node.children[i];
-            extend(leftBBox, node.leaf ? toBBox(child) : child);
-            margin += bboxMargin(leftBBox);
-        }
+            extend(leftBBox, toBBox(child) if node.leaf else child);
+            margin = margin + bboxMargin(leftBBox);
 
-        for (i = M - m - 1; i >= m; i--) {
+        for i in range(M-m-1, m-1, -1):
             child = node.children[i];
-            extend(rightBBox, node.leaf ? toBBox(child) : child);
-            margin += bboxMargin(rightBBox);
-        }
+            extend(rightBBox, toBBox(child) if node.leaf else child);
+            margin = margin + bboxMargin(rightBBox);
 
         return margin;
-    },
 
-    _adjustParentBBoxes: function (bbox, path, level) {
-        // adjust bboxes along the given tree path
-        for (var i = level; i >= 0; i--) {
+    def _adjustParentBBoxes(bbox, path, level):
+        ## adjust bboxes along the given tree path
+        for i in range(level, -1, -1):
             extend(path[i], bbox);
-        }
-    },
 
-    _condense: function (path) {
-        // go through the path, removing empty nodes and updating bboxes
-        for (var i = path.length - 1, siblings; i >= 0; i--) {
-            if (path[i].children.length === 0) {
-                if (i > 0) {
+    def _condense(path):
+        ## go through the path, removing empty nodes and updating bboxes
+        siblings = None
+        for i in range(len(path)-1, -1; -1):
+            if len(path[i].children) == 0:
+                if (i > 0):
                     siblings = path[i - 1].children;
-                    siblings.splice(siblings.indexOf(path[i]), 1);
+                    splice(siblings, siblings.indexOf(path[i]), 1);
+                else:
+                    self.clear();
+            else:
+                calcBBox(path[i], self.toBBox);
 
-                } else this.clear();
+    def _initFormat(self):#format_):
+        ## data format (minX, minY, maxX, maxY accessors)
 
-            } else calcBBox(path[i], this.toBBox);
-        }
-    },
+        ## uses eval-type function compilation instead of just accepting a toBBox function
+        ## because the algorithms are very sensitive to sorting functions performance,
+        ## so they should be dead simple and without inner calls
+        #compareArr = ['return a', ' - b', ';'];
 
-    _initFormat: function (format) {
-        // data format (minX, minY, maxX, maxY accessors)
+        self.compareMinX = lambda a,b: a[0] - b[0]#new Function('a', 'b', compareArr.join(format_[0]));
+        self.compareMinY = lambda a,b: a[1] - b[1]#new Function('a', 'b', compareArr.join(format_[1]));
 
-        // uses eval-type function compilation instead of just accepting a toBBox function
-        // because the algorithms are very sensitive to sorting functions performance,
-        // so they should be dead simple and without inner calls
-
-        var compareArr = ['return a', ' - b', ';'];
-
-        this.compareMinX = new Function('a', 'b', compareArr.join(format[0]));
-        this.compareMinY = new Function('a', 'b', compareArr.join(format[1]));
-
-        this.toBBox = new Function('a',
-            'return {minX: a' + format[0] +
-            ', minY: a' + format[1] +
-            ', maxX: a' + format[2] +
-            ', maxY: a' + format[3] + '};');
-    }
-};
+        # self.toBBox = new Function('a',
+        #     'return {minX: a' + format_[0] +
+        #     ', minY: a' + format_[1] +
+        #     ', maxX: a' + format_[2] +
+        #     ', maxY: a' + format_[3] + '};');
+        self.toBBox = lambda a: {minX: a[0], minY: a[1], maxX: a[0], maxY: a[1]}
