@@ -1,4 +1,4 @@
-import quickselect
+# import quickselect
 
 import sys
 INFINITY = sys.maxsize
@@ -13,6 +13,19 @@ def splice(list_,insert_position,remove_how_many,*items_to_insert):
         list_.insert(insert_position, item)
     return removed_items
 
+def toBBox(item):
+    '''
+    Simply return 'item'
+    '''
+    # For the time being, I'll create a node and put item as its child
+    # and call it a leaf...soon I'll figure out the best thing to do...
+    node = Node(data=item)
+    node.minX = item['minX']
+    node.minY = item['minY']
+    node.maxX = item['maxX']
+    node.maxY = item['maxY']
+    return node
+
 # function createNode(children) {
 #     return {
 #         children: children,
@@ -24,7 +37,7 @@ def splice(list_,insert_position,remove_how_many,*items_to_insert):
 #         maxY: -Infinity
 #     };
 # }
-class Node:
+class Node(object):
     '''Tree node'''
     height = 1
     leaf = True
@@ -32,8 +45,12 @@ class Node:
     minY = INFINITY
     maxX = -INFINITY
     maxY = -INFINITY
-    def __init__(self,children,data=None):
-        self.children = children
+    def __init__(self,children=None,data=None):
+        self.children = children if children is not None else []
+        self.data = data
+
+    def extend(self,bbox):
+        extend(self,bbox)
 
 def createNode(children):
     '''
@@ -41,24 +58,21 @@ def createNode(children):
     '''
     if not children:
         children = []
+    # return {'minX':INFINITY,
+    #         'minY':INFINITY,
+    #         'maxX':-INFINITY,
+    #         'maxY':-INFINITY,
+    #         'children':children}
     return Node(children)
 
 
-# function findItem(item, items, equalsFn) {
-#     if (!equalsFn) return items.indexOf(item);
-#
-#     for (var i = 0; i < items.length; i++) {
-#         if (equalsFn(item, items[i])) return i;
-#     }
-#     return -1;
-# }
 def findItem(item, items, equalsFn):
     if not equalsFn:
         return items.index(item)
-    for i in range(0, len(items):
+    for i in range(0, len(items)):
         #TODO equalsFn?
         if equalsFn(item, items[i]):
-        return i
+            return i
 
     return -1
 
@@ -84,12 +98,12 @@ def extend(a, b):
     return a
 
 # function compareNodeMinX(a, b) { return a.minX - b.minX; }
-def compareNodeMinX(a, b):
-    return a.minX - b.minX
+def compareNodeMinX(a):
+    return a.minX# - b.minX
 
 # function compareNodeMinY(a, b) { return a.minY - b.minY; }
-def compareNodeMinY(a, b):
-    return a.minY - b.minY
+def compareNodeMinY(a):
+    return a.minY# - b.minY
 
 # function bboxArea(a)   { return (a.maxX - a.minX) * (a.maxY - a.minY); }
 def bboxArea(a):
@@ -168,21 +182,31 @@ class Rbush(object):
         if (isPoint):
             self._initFormat();
 
-    def insert(item):
+    def insert(self,item):
         '''Insert an item'''
-        assert hasattr(item,'minX') \
-            and hasattr(item,'minY') \
-            and hasattr(item,'maxX') \
-            and hasattr(item,'maxY') \
-            , "item is must have 'minX,minY,maxX,maxY attributes'"
+        assert  'minX' in item \
+            and 'minY' in item \
+            and 'maxX' in item \
+            and 'maxY' in item \
+            , "item is must have 'minX,minY,maxX,maxY' attributes"
 
-        if item:
+        if self.data:
             self._insert(item, self.data.height - 1)
-        return self
+        else:
+            self._createRoot(item)
 
-    def _insert(item, level, isNode=False):
+    def _createRoot(self,item):
+        node = Node(data=item)
+        self.data = createNode([node])
+        self.data.height = 1
+        self.data.leaf = False
+        calcBBox(self.data);
+
+
+    def _insert(self, item, level, isNode=False):
         # bbox is *always* an item
-        bbox = item if isNode else self.toBBox(item)
+        bbox = item if isNode else toBBox(item)
+        assert isinstance(bbox,Node)
 
         insertPath = []
 
@@ -190,8 +214,9 @@ class Rbush(object):
         node = self._chooseSubtree(bbox, self.data, level, insertPath)
 
         ## put the item into the node
-        node.children.append(item)
-        _=extend(node, bbox)
+        # node.children.append(item)
+        node.children.append(bbox)
+        node.extend(bbox)
 
         ## split on node overflow; propagate upwards if necessary
         while level >= 0:
@@ -212,15 +237,16 @@ class Rbush(object):
     def all(self):
         return self._all(self.data, [])
 
-    def _all(node, result):
+    def _all(self, node, result):
         nodesToSearch = []
         while node:
             if node.leaf:
                 # result.push.apply(result, node.children);
-                result.extend(node.children)
+                # result.extend(node.children)
+                result.append(node.data)
             else:
                 nodesToSearch.extend(node.children)
-            node = nodesToSearch.pop(-1)
+            node = nodesToSearch.pop(-1) if len(nodesToSearch) else None
         return result
 
     def search(self,bbox):
@@ -272,7 +298,7 @@ class Rbush(object):
         return False
 
     def load(data):
-        if not (data && len(data)):
+        if not (data and len(data)):
             return self
         if (data.length < self_minEntries):
             len_ = len(data)
@@ -349,12 +375,12 @@ class Rbush(object):
 
         return this
 
-    def toBBox(item):
+    def toBBox(self,item):
         '''
         Simply return 'item'
         '''
         # item is a (2D) box...
-        return item
+        return toBBox(item)
 
     compareMinX = compareNodeMinX
     compareMinY = compareNodeMinY
@@ -409,7 +435,7 @@ class Rbush(object):
         calcBBox(node, self.toBBox)
         return node
 
-    def _chooseSubtree(bbox, node, level, path):
+    def _chooseSubtree(self, bbox, node, level, path):
         '''
         Return the node closer to 'bbox'
 
@@ -417,11 +443,11 @@ class Rbush(object):
         the node at the end, closest to bbox is returned
         '''
         while True:
+
             path.append(node)
+
             if node.leaf or (len(path)-1 == level):
                 break
-            #XXX what is level==-1|0? node must be a leaf!
-            assert not node.leaf and level > 0
 
             minEnlargement = INFINITY
             minArea = INFINITY
@@ -458,9 +484,9 @@ class Rbush(object):
         M = len(node.children)
         m = self._minEntries
 
-        self._chooseSplitAxis(node, m, M)
+        self._chooseSplitAxis(node)
 
-        splitIndex = self._chooseSplitIndex(node, m, M)
+        splitIndex = self._chooseSplitIndex(node)
 
         numChildren = len(node.children) - splitIndex
         adopted = splice(node.children, splitIndex, numChildren)
@@ -476,7 +502,7 @@ class Rbush(object):
         else:
             self._splitRoot(node, newNode)
 
-    def _splitRoot(node, newNode):
+    def _splitRoot(self, node, newNode):
         ## split root node
         self.data = createNode([node, newNode])
         self.data.height = node.height + 1
@@ -501,7 +527,7 @@ class Rbush(object):
             if (overlap < minOverlap):
                 minOverlap = overlap;
                 index = i;
-                minArea = are if area < minArea else minArea;
+                minArea = area if area < minArea else minArea;
 
             else:
                 if (overlap == minOverlap):
@@ -518,8 +544,8 @@ class Rbush(object):
         m = self._minEntries
         compareMinX = self.compareMinX if node.leaf else compareNodeMinX
         compareMinY = self.compareMinY if node.leaf else compareNodeMinY
-        xMargin = self._allDistMargin(node, compareMinX),
-        yMargin = self._allDistMargin(node, compareMinY);
+        xMargin = self._allDistMargin(node, compareMinX)
+        yMargin = self._allDistMargin(node, compareMinY)
 
         ## if total distributions margin value is minimal for x, sort by minX,
         ## otherwise it's already sorted by minY
@@ -532,7 +558,7 @@ class Rbush(object):
         m = self._minEntries
 
         #NOTE the order of 'node.children' is changed in place by 'sort':
-        node.children.sort(compare)
+        node.children.sort(key=compare)
 
         leftBBox = distBBox(node, 0, m)#, toBBox)
         rightBBox = distBBox(node, M - m, M)#, toBBox)
@@ -550,15 +576,15 @@ class Rbush(object):
 
         return margin;
 
-    def _adjustParentBBoxes(bbox, path, level):
+    def _adjustParentBBoxes(self, bbox, path, level):
         ## adjust bboxes along the given tree path
         for i in range(level, -1, -1):
-            extend(path[i], bbox);
+            path[i].extend(bbox);
 
     def _condense(path):
         ## go through the path, removing empty nodes and updating bboxes
         siblings = None
-        for i in range(len(path)-1, -1; -1):
+        for i in range(len(path)-1, -1, -1):
             if len(path[i].children) == 0:
                 if (i > 0):
                     siblings = path[i - 1].children;
