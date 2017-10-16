@@ -22,7 +22,7 @@ Point = dict(
     y = None
 )
 
-def createNode(children=None,data=None):
+def createNode(children=[],data=None):
     '''
     Create a node (leaf,parent or bbox)
     '''
@@ -56,7 +56,7 @@ def splice(list_,insert_position,remove_how_many,*items_to_insert):
         list_.insert(insert_position, item)
     return removed_items
 
-def findItem(item, items, equalsFn):
+def findItem(item, items, equalsFn=None):
     if not equalsFn:
         return items.index(item)
     for i in range(0, len(items)):
@@ -306,7 +306,7 @@ class Rbush(object):
             and 'maxY' in item \
             , "item is must have 'minX,minY,maxX,maxY' attributes"
 
-        if self.data:
+        if self.data['children']:
             self._insert(item, self.data['height'] - 1)
         else:
             self._createRoot(item)
@@ -315,10 +315,10 @@ class Rbush(object):
         print(pprint.pprint(self.data))
 
     def _createRoot(self,item):
-        node = createNode(data=item)
-        root = createNode(children=[node])
+        # node = createNode(data=item)
+        root = createNode(children=[item])
         root['height'] = 1
-        root['leaf'] = False
+        root['leaf'] = True
         calcBBox(root);
         self.data = root
 
@@ -334,8 +334,8 @@ class Rbush(object):
         node = chooseSubtree(bbox, root, level, insertPath)
 
         ## put the item into the node
-        # node['children'].append(item)
-        node['children'].append(bbox)
+        node['children'].append(item)
+        # node['children'].append(bbox)
         extend(node,bbox)
 
         ## split on node overflow; propagate upwards if necessary
@@ -365,7 +365,7 @@ class Rbush(object):
         newNode = createNode( children=adopted )
         newNode['height'] = node['height']
         newNode['leaf'] = node['leaf']
-        assert not node['leaf'], "a leaf should not have children!"
+        # assert not node['leaf'], "a leaf should not have children!"
 
         # Update the sizes (limits) of each box
         calcBBox(node)
@@ -384,9 +384,8 @@ class Rbush(object):
         calcBBox(newRoot);
         self.data = newRoot
 
-    def clear():
-        self.data = createNode([])
-        return self
+    def clear(self):
+        self.data = createNode()
 
     # I understand 'all' is the equivalent to __init__
     def all(self):
@@ -397,8 +396,8 @@ class Rbush(object):
         while node:
             if node['leaf']:
                 # result.push.apply(result, node['children']);
-                # result.extend(node['children'])
-                result.append(node['data'])
+                result.extend(node['children'])
+                # result.append(node['data'])
             else:
                 nodesToSearch.extend(node['children'])
             node = nodesToSearch.pop() if len(nodesToSearch) else None
@@ -479,7 +478,7 @@ class Rbush(object):
             self._insert(node, self.data['height'] - node['height'] - 1, true)
         return self
 
-    def remove(self, item, equalsFn):
+    def remove(self, item, equalsFn=None):
         if not item:
             return None
 
@@ -585,18 +584,18 @@ class Rbush(object):
 
 
 
-    def _condense(path):
+    def _condense(self,path):
         ## go through the path, removing empty nodes and updating bboxes
         siblings = None
         for i in range(len(path)-1, -1, -1):
             if len(path[i]['children']) == 0:
                 if (i > 0):
                     siblings = path[i - 1]['children'];
-                    splice(siblings, siblings.indexOf(path[i]), 1);
+                    splice(siblings, siblings.index(path[i]), 1);
                 else:
                     self.clear();
             else:
-                calcBBox(path[i], self.toBBox);
+                calcBBox(path[i]);
 
     def _initFormat(self):#format_):
         ## data format (minX, minY, maxX, maxY accessors)
