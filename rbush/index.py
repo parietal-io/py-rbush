@@ -126,8 +126,7 @@ def intersects(a,b):
     return b_lower_a and b_upper_a
 
 
-def multiSelect(arr, left, right, n, compare):
-    from math import ceil
+def multiSelect(items, left, right, n, compare):
     stack = [left, right]
     mid = None
     #FIXME: I don't like the object being checked (i.e, 'stack') being
@@ -137,9 +136,9 @@ def multiSelect(arr, left, right, n, compare):
         left = stack.pop()
         if (right - left) <= n:
             continue
-        mid = left + ceil((right - left) / n / 2) * n
-        quickselect(arr, mid, left, right, compare)
-        stack.push([left, mid, mid, right])
+        mid = left + math.ceil((right - left) / n / 2) * n
+        quickselect(items, mid, left, right, compare)
+        stack.extend([left, mid, mid, right])
 
 
 # def rbush(self, maxEntries, format_):
@@ -423,19 +422,15 @@ class Rbush(object):
                         self._all(child, result)
                     else:
                         nodesToSearch.append(child)
-            node = nodesToSearch.pop() #XXX: Python does pop(0) by default; check if javascript is the same
+            node = nodesToSearch.pop() if len(nodesToSearch) else None
         return result
 
-    def collides(bbox):
+    def collides(self,bbox):
         node = self.data
-        toBBox = self.toBBox
         if not intersects(bbox, node):
             return false
+
         nodesToSearch = []
-        i = None
-        len_ = None
-        child = None
-        childBBox = None
         while node:
             len_ = len(node['children'])
             for i in range(0,len_):
@@ -443,25 +438,23 @@ class Rbush(object):
                 childBBox = toBBox(child) if node['leaf'] else child
                 if intersects(bbox, childBBox):
                     if node['leaf'] or contains(bbox, childBBox):
-                        return true;
+                        return True;
                     nodesToSearch.append(child)
-            node = nodesToSearch.pop()
+            node = nodesToSearch.pop() if len(nodesToSearch) else None
         return False
 
-    def load(data):
+    def load(self,data):
         if not (data and len(data)):
-            return self
-        if (data.length < self_minEntries):
-            len_ = len(data)
+            return False
+        len_ = len(data)
+        if (len_ < self._minEntries):
             for i in range(0,len_):
-                self.insert(data[i]) #XXX this.insert? define 'insert' method for rbush
-            return self
+                self.insert(data[i])
+            return True
 
         ## recursively build the tree with the given data from scratch using OMT algorithm
-        #XXX what is 'data' and what 'slice' does?
-        node = self._build(data.slice(), 0, len(data) - 1, 0)
+        node = self._build(data[:], 0, len(data) - 1, 0)
 
-        #XXX looks like 'data' is a node...
         if not len(self.data['children']):
             ## save as is if tree is empty
             self.data = node
@@ -475,8 +468,8 @@ class Rbush(object):
                 self.data = node
                 node = tmpNode
             ## insert the small tree into the large tree at appropriate level
-            self._insert(node, self.data['height'] - node['height'] - 1, true)
-        return self
+            self._insert(node, self.data['height'] - node['height'] - 1, True)
+        return True
 
     def remove(self, item, equalsFn=None):
         if not item:
@@ -548,7 +541,7 @@ class Rbush(object):
         if N <= M:
             ## reached leaf level; return leaf
             node = createNode(items[left : right + 1])
-            calcBBox(node, self.toBBox)
+            calcBBox(node)
             return node
 
         if not height:
@@ -565,10 +558,6 @@ class Rbush(object):
         ## split the items into M mostly square tiles
         N2 = math.ceil(N / M)
         N1 = N2 * math.ceil(math.sqrt(M))
-        i = None
-        j = None
-        right2 = None
-        right3 = None
 
         multiSelect(items, left, right, N1, self.compareMinX)
 
@@ -579,7 +568,7 @@ class Rbush(object):
                 right3 = min(j + N2 - 1, right2)
                 ## pack each entry recursively
                 node['children'].append(self._build(items, j, right3, height - 1))
-        calcBBox(node, self.toBBox)
+        calcBBox(node)
         return node
 
 
