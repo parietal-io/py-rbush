@@ -1,10 +1,12 @@
-# import quickselect
 import sys
 INF = sys.maxsize
 
 import math
 
-
+from importlib import reload
+import quickselect
+reload(quickselect)
+quickselect = quickselect.quickselect
 
 _node = dict(
     minX = INF,
@@ -13,8 +15,8 @@ _node = dict(
     maxY = -INF,
     leaf = True,
     height = 1,
-    children = None,
-    data = None
+    # data = None,
+    children = None
 )
 
 Point = dict(
@@ -29,8 +31,8 @@ def createNode(children=[],data=None):
     # assert (children is None) != (data is None)
     node = _node.copy()
     node['children'] = children
-    node['data'] = data
-    node['leaf'] = children is None
+    # node['data'] = data
+    # node['leaf'] = children is None
     return node
 
 def toBBox(item):
@@ -310,8 +312,8 @@ class Rbush(object):
         else:
             self._createRoot(item)
 
-        import pprint
-        print(pprint.pprint(self.data))
+        # import pprint
+        # print(pprint.pprint(self.data))
 
     def _createRoot(self,item):
         # node = createNode(data=item)
@@ -533,7 +535,7 @@ class Rbush(object):
     def fromJSON(data):
         self.data = data
 
-    def _build(items, left, right, height):
+    def _build(self, items, left, right, height):
         N = right - left + 1
         M = self._maxEntries
         node = None
@@ -559,11 +561,11 @@ class Rbush(object):
         N2 = math.ceil(N / M)
         N1 = N2 * math.ceil(math.sqrt(M))
 
-        multiSelect(items, left, right, N1, self.compareMinX)
+        multiSelect(items, left, right, N1, compareNodeMinX)
 
         for i in range(left, right+1, N1):
             right2 = min(i + N1 - 1, right)
-            multiSelect(items, i, right2, N2, self.compareMinY)
+            multiSelect(items, i, right2, N2, compareNodeMinY)
             for j in range(i, right2+1, N2):
                 right3 = min(j + N2 - 1, right2)
                 ## pack each entry recursively
