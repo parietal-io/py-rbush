@@ -1,4 +1,4 @@
-from index import *
+# from index import *
 
 from collections import defaultdict
 _node = defaultdict(None)
@@ -28,8 +28,3 @@ def createNode(children=None,data=None):
     node['children'] = children
     node['data'] = data
     return node
-
-# dl = sorted(d.items(),key=itemgetter(1), reverse=True)
-# for item in dl:
-#     print item
-#
