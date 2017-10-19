@@ -364,6 +364,20 @@ class TestRbush(unittest.TestCase):
     #     t.end();
 
 
+    #t('#remove accepts an equals function',
+    # def test_remove_function(t):
+    #     import json
+    #     tree = Rbush(4)
+    #     tree.load(data);
+    #
+    #     item = {'minX': 20, 'minY': 70, 'maxX': 20, 'maxY': 70, 'foo': 'bar'};
+    #
+    #     tree.insert(item);
+    #     tree.remove(item, lambda a,b: a['foo'] == b['foo'])
+    #
+    #     sortedEqual(t, tree.all(), data);
+
+
     #t('#remove brings the tree to a clear state when removing everything one by one',
     def test_clean_tree(t):
         tree = Rbush(4)
@@ -373,21 +387,6 @@ class TestRbush(unittest.TestCase):
             tree.remove(data[i]);
 
         t.assertEqual(tree.toJSON(), Rbush(4).toJSON());
-
-
-    #t('#remove accepts an equals function',
-    def test_remove_function(t):
-        import json
-        tree = Rbush(4)
-        tree.load(data);
-
-        item = {'minX': 20, 'minY': 70, 'maxX': 20, 'maxY': 70, 'foo': 'bar'};
-
-        tree.insert(item);
-        tree.remove(json.loads(json.dumps(item)),
-                    lambda a,b: a['foo'] == b['foo'])
-
-        t.sortedEqual(tree.all(), data);
 
 
     #t('#clear should clear all the data in the tree',

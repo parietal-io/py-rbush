@@ -24,13 +24,13 @@ Point = dict(
     y = None
 )
 
-def createNode(children=[],data=None):
+def createNode(children=None):
     '''
     Create a node (leaf,parent or bbox)
     '''
     # assert (children is None) != (data is None)
     node = _node.copy()
-    node['children'] = children
+    node['children'] = children or []
     # node['data'] = data
     # node['leaf'] = children is None
     return node
@@ -59,12 +59,11 @@ def splice(list_,insert_position,remove_how_many,*items_to_insert):
 
 def findItem(item, items, equalsFn=None):
     if not equalsFn:
-        return items.index(item)
+        return items.index(item) if item in items else None
     for i in range(0, len(items)):
-        #TODO equalsFn?
         if equalsFn(item, items[i]):
             return i
-    return -1
+    return None
 
 def extend(a, b):
     """Return 'a' box enlarged by 'b'"""
@@ -193,18 +192,38 @@ def adjustParentBBoxes(bbox, path, level):
 
 
 class Rbush(object):
-
-    def __init__(self,maxEntries=9,format=None):
+    _defaultMaxEntries = 9
+    def __init__(self,maxEntries=None,format=None):
         ## max entries in a node is 9 by default; min node fill is 40% for best performance
-        self._maxEntries = max(4, maxEntries or 9);
+        self._maxEntries = max(4, maxEntries or self._defaultMaxEntries);
         self._minEntries = max(2, math.ceil(self._maxEntries * 0.4));
-        self.data = createNode(children=[])
 
-        if format:
-            self._initFormat(format);
+        self._initFormat(format);
+
+        self._createRoot()
+
 
     def __eq__(self,other):
         return self.toJSON() == other.toJSON()
+
+    def __str__(self):
+        return self.toJSON()
+
+    def copy(self):
+        new = Rbush(self._maxEntries,self._format)
+        new.fromJSON(self.toJSON())
+        assert new == self
+        return new
+
+
+    def _createRoot(self,item=None):
+        _children = [item] if item else []
+        root = createNode(children=_children)
+        root['height'] = 1
+        root['leaf'] = True
+        self.calcBBox(root);
+        self.data = root
+
 
     def insert(self,item):
         '''Insert an item'''
@@ -214,14 +233,6 @@ class Rbush(object):
             else:
                 self._createRoot(item)
 
-
-    def _createRoot(self,item):
-        # node = createNode(data=item)
-        root = createNode(children=[item])
-        root['height'] = 1
-        root['leaf'] = True
-        self.calcBBox(root);
-        self.data = root
 
     def _insert(self, item, level, isNode=False):
         #
@@ -467,7 +478,7 @@ class Rbush(object):
 
     def remove(self, item, equalsFn=None):
         if not item:
-            return None
+            return
 
         node = self.data
         bbox = self.toBBox(item)
@@ -475,34 +486,44 @@ class Rbush(object):
         indexes = []
         goingUp = False
         parent = None
+        i = None
 
         ## depth-first iterative tree traversal
         while node or len(path):
+
             if not node: ## go up
                 node = path.pop()
-                parent = path[len(path) - 1]
-                i = indexes.pop()
+                parent = path[len(path) - 1] if len(path) else None
+                i = indexes.pop() if len(indexes) else None
                 goingUp = True
+
             if node['leaf']: ## check current node
                 index = findItem(item, node['children'], equalsFn)
-                if index != -1:
+                if index is not None:
                     ## item found, remove the item and condense tree upwards
                     # node['children'].splice(index, 1)
                     splice(node['children'], index, 1)
                     path.append(node)
                     self._condense(path)
-                    return self
+                    return
 
             if not goingUp and not node['leaf'] and contains(node, bbox): ## go down
                 path.append(node)
-                indexes.append(i)
+                if i is not None:
+                    indexes.append(i)
                 i = 0
                 parent = node
                 node = node['children'][0]
 
-            elif (parent): ## go right
+            elif parent: ## go right
                 i=i+1
-                node = parent['children'][i]
+                # if len(parent['children'])<i:
+                try:
+                    node = parent['children'][i]
+                except IndexError as e:
+                    node = None
+                # else:
+                #     node = None
                 goingUp = False
 
             else:
@@ -590,8 +611,12 @@ class Rbush(object):
             else:
                 self.calcBBox(path[i]);
 
-    def _initFormat(self,format_):#format_):
+
+    def _initFormat(self,format_):
         ## data format (minX, minY, maxX, maxY accessors)
+        self._format = format_
+        if not format_:
+            return
 
         ## uses eval-type function compilation instead of just accepting a toBBox function
         ## because the algorithms are very sensitive to sorting functions performance,
