@@ -5,7 +5,7 @@ Infinity = sys.maxsize
 
 import unittest
 
-from rbush.index import Rbush
+from rbush import Rbush
 
 # def defaultCompare(a, b):
 #     return (a['minX'] - b['minX']) or (a['minY'] - b['minY']) or (a['maxX'] - b['maxX']) or (a['maxY'] - b['maxY']);

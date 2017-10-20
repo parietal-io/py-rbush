@@ -16,8 +16,8 @@ def quickselect(arr, k, left, right, compare):
             d = -1 if m - n / 2 < 0 else 1
             # sd = 0.5 * math.sqrt(z * s * (n - s) / n) * (m - n / 2 < 0 ? -1 : 1);
             sd = 0.5 * math.sqrt(z * s * (n - s) / n) * d;
-            newLeft = math.max(left, math.floor(k - m * s / n + sd));
-            newRight = math.min(right, math.floor(k + (n - m) * s / n + sd));
+            newLeft = max(left, math.floor(k - m * s / n + sd));
+            newRight = min(right, math.floor(k + (n - m) * s / n + sd));
             quickselect(arr, k, newLeft, newRight, compare);
 
         t = arr[k];
