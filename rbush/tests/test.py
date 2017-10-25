@@ -5,27 +5,27 @@ Infinity = sys.maxsize
 
 import unittest
 
-from rbush import Rbush
+from rbush import Rbush,RBushBox
 
 # def defaultCompare(a, b):
-#     return (a['minX'] - b['minX']) or (a['minY'] - b['minY']) or (a['maxX'] - b['maxX']) or (a['maxY'] - b['maxY']);
+#     return (a.xmin - b.xmin) or (a.ymin - b.ymin) or (a.xmax - b.xmax) or (a.ymax - b.ymax);
 def defaultCompare(a):
-    return a['minX'] + a['minY'] + a['maxX'] + a['maxY']
+    return a.xmin + a.ymin + a.xmax + a.ymax
 
 
 def someData(n):
     data = [];
     for i in range(0, n):
-        data.append({'minX': i, 'minY': i, 'maxX': i, 'maxY': i});
+        data.append({'xmin': i, 'ymin': i, 'xmax': i, 'ymax': i});
     return data;
 
 
 def arrToBBox(arr):
-    return dict(
-                minX= arr[0],
-                minY= arr[1],
-                maxX= arr[2],
-                maxY= arr[3]
+    return RBushBox(
+                xmin= arr[0],
+                ymin= arr[1],
+                xmax= arr[2],
+                ymax= arr[3]
                 )
 
 
@@ -62,74 +62,74 @@ def sortedEqual(t, a, b, compare=None):
 class TestRbush(unittest.TestCase):
 
     # t('constructor accepts a format argument to customize the data format',
-    def test_format_argument(t):
-        tree = Rbush(4, ['minLng', 'minLat', 'maxLng', 'maxLat']);
-        t.assertEqual(tree.toBBox({'minLng': 1, 'minLat': 2, 'maxLng': 3, 'maxLat': 4}),
-                        {'minX': 1, 'minY': 2, 'maxX': 3, 'maxY': 4}
-                        );
+    # def test_format_argument(t):
+    #     tree = Rbush(4, ['minLng', 'minLat', 'maxLng', 'maxLat']);
+    #     t.assertEqual(tree.toBBox({'minLng': 1, 'minLat': 2, 'maxLng': 3, 'maxLat': 4}),
+    #                     {'xmin': 1, 'ymin': 2, 'xmax': 3, 'ymax': 4}
+    #                     );
 
 
     # t('constructor uses 9 max entries by default',
     def test_default_maxEntries(t):
         tree = Rbush()
         tree.load(someData(9));
-        t.assertEqual(tree.toJSON()['height'], 1);
+        t.assertEqual(tree.toDict()['height'], 1);
 
         tree2 = Rbush()
         tree2.load(someData(10));
-        t.assertEqual(tree2.toJSON()['height'], 2);
+        t.assertEqual(tree2.toDict()['height'], 2);
 
 
-    # t('#toBBox, #compareMinX, #compareMinY can be overriden to allow custom data structures',
-    def test_custom_dataStructures(t):
-        tree = Rbush(4);
-        tree.toBBox = lambda item: {'minX': item['minLng'],
-                                    'minY': item['minLat'],
-                                    'maxX': item['maxLng'],
-                                    'maxY': item['maxLat'] };
-        tree.compareMinX = lambda a: a['minLng']# - b['minLng'];
-        tree.compareMinY = lambda a: a['minLat']# - b['minLat'];
-
-        data = [
-            {'minLng': -115, 'minLat':  45, 'maxLng': -105, 'maxLat':  55},
-            {'minLng':  105, 'minLat':  45, 'maxLng':  115, 'maxLat':  55},
-            {'minLng':  105, 'minLat': -55, 'maxLng':  115, 'maxLat': -45},
-            {'minLng': -115, 'minLat': -55, 'maxLng': -105, 'maxLat': -45}
-        ];
-
-        tree.load(data);
-
-        # def byLngLat(a, b):
-        #     return a['minLng'] - b['minLng'] or a['minLat'] - b['minLat'];
-        def byLngLat(a):
-            return a['minLng'] + a['minLat']
-
-        sortedEqual(t, tree.search({'minX': -180, 'minY': -90, 'maxX': 180, 'maxY': 90}), [
-            {'minLng': -115, 'minLat':  45, 'maxLng': -105, 'maxLat':  55},
-            {'minLng':  105, 'minLat':  45, 'maxLng':  115, 'maxLat':  55},
-            {'minLng':  105, 'minLat': -55, 'maxLng':  115, 'maxLat': -45},
-            {'minLng': -115, 'minLat': -55, 'maxLng': -105, 'maxLat': -45}
-        ], byLngLat);
-
-        sortedEqual(t, tree.search({'minX': -180, 'minY': -90, 'maxX': 0, 'maxY': 90}), [
-            {'minLng': -115, 'minLat':  45, 'maxLng': -105, 'maxLat':  55},
-            {'minLng': -115, 'minLat': -55, 'maxLng': -105, 'maxLat': -45}
-        ], byLngLat);
-
-        sortedEqual(t, tree.search({'minX': 0, 'minY': -90, 'maxX': 180, 'maxY': 90}), [
-            {'minLng': 105, 'minLat':  45, 'maxLng': 115, 'maxLat':  55},
-            {'minLng': 105, 'minLat': -55, 'maxLng': 115, 'maxLat': -45}
-        ], byLngLat);
-
-        sortedEqual(t, tree.search({'minX': -180, 'minY': 0, 'maxX': 180, 'maxY': 90}), [
-            {'minLng': -115, 'minLat': 45, 'maxLng': -105, 'maxLat': 55},
-            {'minLng':  105, 'minLat': 45, 'maxLng':  115, 'maxLat': 55}
-        ], byLngLat);
-
-        sortedEqual(t, tree.search({'minX': -180, 'minY': -90, 'maxX': 180, 'maxY': 0}), [
-            {'minLng':  105, 'minLat': -55, 'maxLng':  115, 'maxLat': -45},
-            {'minLng': -115, 'minLat': -55, 'maxLng': -105, 'maxLat': -45}
-        ], byLngLat);
+    # t('#toBBox, #comparexmin, #compareymin can be overriden to allow custom data structures',
+    # def test_custom_dataStructures(t):
+    #     tree = Rbush(4);
+    #     tree.toBBox = lambda item: {'xmin': item['minLng'],
+    #                                 'ymin': item['minLat'],
+    #                                 'xmax': item['maxLng'],
+    #                                 'ymax': item['maxLat'] };
+    #     tree.comparexmin = lambda a: a['minLng']# - b['minLng'];
+    #     tree.compareymin = lambda a: a['minLat']# - b['minLat'];
+    #
+    #     data = [
+    #         {'minLng': -115, 'minLat':  45, 'maxLng': -105, 'maxLat':  55},
+    #         {'minLng':  105, 'minLat':  45, 'maxLng':  115, 'maxLat':  55},
+    #         {'minLng':  105, 'minLat': -55, 'maxLng':  115, 'maxLat': -45},
+    #         {'minLng': -115, 'minLat': -55, 'maxLng': -105, 'maxLat': -45}
+    #     ];
+    #
+    #     tree.load(data);
+        #
+        # # def byLngLat(a, b):
+        # #     return a['minLng'] - b['minLng'] or a['minLat'] - b['minLat'];
+        # def byLngLat(a):
+        #     return a['minLng'] + a['minLat']
+        #
+        # sortedEqual(t, tree.search({'xmin': -180, 'ymin': -90, 'xmax': 180, 'ymax': 90}), [
+        #     {'minLng': -115, 'minLat':  45, 'maxLng': -105, 'maxLat':  55},
+        #     {'minLng':  105, 'minLat':  45, 'maxLng':  115, 'maxLat':  55},
+        #     {'minLng':  105, 'minLat': -55, 'maxLng':  115, 'maxLat': -45},
+        #     {'minLng': -115, 'minLat': -55, 'maxLng': -105, 'maxLat': -45}
+        # ], byLngLat);
+        #
+        # sortedEqual(t, tree.search({'xmin': -180, 'ymin': -90, 'xmax': 0, 'ymax': 90}), [
+        #     {'minLng': -115, 'minLat':  45, 'maxLng': -105, 'maxLat':  55},
+        #     {'minLng': -115, 'minLat': -55, 'maxLng': -105, 'maxLat': -45}
+        # ], byLngLat);
+        #
+        # sortedEqual(t, tree.search({'xmin': 0, 'ymin': -90, 'xmax': 180, 'ymax': 90}), [
+        #     {'minLng': 105, 'minLat':  45, 'maxLng': 115, 'maxLat':  55},
+        #     {'minLng': 105, 'minLat': -55, 'maxLng': 115, 'maxLat': -45}
+        # ], byLngLat);
+        #
+        # sortedEqual(t, tree.search({'xmin': -180, 'ymin': 0, 'xmax': 180, 'ymax': 90}), [
+        #     {'minLng': -115, 'minLat': 45, 'maxLng': -105, 'maxLat': 55},
+        #     {'minLng':  105, 'minLat': 45, 'maxLng':  115, 'maxLat': 55}
+        # ], byLngLat);
+        #
+        # sortedEqual(t, tree.search({'xmin': -180, 'ymin': -90, 'xmax': 180, 'ymax': 0}), [
+        #     {'minLng':  105, 'minLat': -55, 'maxLng':  115, 'maxLat': -45},
+        #     {'minLng': -115, 'minLat': -55, 'maxLng': -105, 'maxLat': -45}
+        # ], byLngLat);
 
 
     # t('#load bulk-loads the given data given max node entries and forms a proper search tree',
@@ -151,14 +151,14 @@ class TestRbush(unittest.TestCase):
         tree2.insert(data[1])
         tree2.insert(data[2]);
 
-        t.assertEqual(tree.toJSON(), tree2.toJSON());
+        t.assertEqual(tree.toDict(), tree2.toDict());
 
 
     # t('#load does nothing if loading empty data',
     def test_data_load_empty(t):
         tree = Rbush()
         tree.load([]);
-        t.assertEqual(tree.toJSON(), Rbush().toJSON());
+        t.assertEqual(tree.toDict(), Rbush().toDict());
 
 
     # t('#load handles the insertion of maxEntries + 2 empty bboxes',
@@ -166,7 +166,7 @@ class TestRbush(unittest.TestCase):
         tree = Rbush(4)
         tree.load(emptyData);
 
-        t.assertEqual(tree.toJSON()['height'], 2);
+        t.assertEqual(tree.toDict()['height'], 2);
         sortedEqual(t, tree.all(), emptyData);
 
 
@@ -177,7 +177,7 @@ class TestRbush(unittest.TestCase):
         for datum in emptyData:
             tree.insert(datum);
 
-        t.assertEqual(tree.toJSON()['height'], 2);
+        t.assertEqual(tree.toDict()['height'], 2);
         sortedEqual(t, tree.all(), emptyData);
 
 
@@ -187,7 +187,7 @@ class TestRbush(unittest.TestCase):
         tree.load(data)
         tree.load(data);
 
-        t.assertEqual(tree.toJSON()['height'], 4);
+        t.assertEqual(tree.toDict()['height'], 4);
         data.extend(data)
         sortedEqual(t, tree.all(), data);
 
@@ -204,7 +204,7 @@ class TestRbush(unittest.TestCase):
         tree2    .load(smaller)
         tree2    .load(data);
 
-        t.assertEqual(tree1.toJSON()['height'], tree2.toJSON()['height']);
+        t.assertEqual(tree1.toDict()['height'], tree2.toDict()['height']);
 
         sortedEqual(t, tree1.all(), data + smaller);
         sortedEqual(t, tree2.all(), data + smaller);
@@ -215,7 +215,7 @@ class TestRbush(unittest.TestCase):
 
         tree = Rbush(4)
         tree.load(data);
-        result = tree.search({'minX': 40, 'minY': 20, 'maxX': 80, 'maxY': 70});
+        result = tree.search({'xmin': 40, 'ymin': 20, 'xmax': 80, 'ymax': 70});
 
         sortedEqual(t, result, list(map(arrToBBox,
         [
@@ -231,7 +231,7 @@ class TestRbush(unittest.TestCase):
     def test_find_collision(t):
         tree = Rbush(4)
         tree.load(data);
-        result = tree.collides({'minX': 40, 'minY': 20, 'maxX': 80, 'maxY': 70});
+        result = tree.collides({'xmin': 40, 'ymin': 20, 'xmax': 80, 'ymax': 70});
 
         t.assertTrue(result);
 
@@ -264,15 +264,15 @@ class TestRbush(unittest.TestCase):
         result = tree.all();
 
         sortedEqual(t, result, data);
-        sortedEqual(t, tree.search({'minX': 0, 'minY': 0, 'maxX': 100, 'maxY': 100}), data);
+        sortedEqual(t, tree.search({'xmin': 0, 'ymin': 0, 'xmax': 100, 'ymax': 100}), data);
 
 
-    #t('#toJSON & #fromJSON exports and imports search tree in JSON format',
+    #t('#toDict & #fromJSON exports and imports search tree in JSON format',
     def test_json_io(t):
         tree = Rbush(4)
         tree.load(data);
         tree2 = Rbush(4)
-        tree2.fromJSON(tree.data);
+        tree2.fromJSON(tree.toJSON());
 
         sortedEqual(t, tree.all(), tree2.all());
 
@@ -291,11 +291,11 @@ class TestRbush(unittest.TestCase):
         tree.load(items[0:3]);
 
         tree.insert(items[3]);
-        t.assertEqual(tree.toJSON()['height'], 1);
+        t.assertEqual(tree.toDict()['height'], 1);
         sortedEqual(t, tree.all(), items[0:4]);
 
         tree.insert(items[4]);
-        t.assertEqual(tree.toJSON()['height'], 2);
+        t.assertEqual(tree.toDict()['height'], 2);
         sortedEqual(t, tree.all(), items);
 
 
@@ -321,7 +321,7 @@ class TestRbush(unittest.TestCase):
         tree2 = Rbush(4)
         tree2.load(data);
 
-        t.assertTrue(tree.toJSON()['height'] - tree2.toJSON()['height'] <= 1);
+        t.assertTrue(tree.toDict()['height'] - tree2.toDict()['height'] <= 1);
 
         sortedEqual(t, tree.all(), tree2.all());
 
@@ -330,13 +330,13 @@ class TestRbush(unittest.TestCase):
     def test_insert_numpy_vectors(t):
         numitems = 100
         import numpy as np
-        minX = np.random.randint(0,100,numitems)
-        minY = np.random.randint(0,100,numitems)
-        maxX = minX + np.random.randint(0,100,numitems)
-        maxY = minY + np.random.randint(0,100,numitems)
+        xmin = np.random.randint(0,100,numitems)
+        ymin = np.random.randint(0,100,numitems)
+        xmax = xmin + np.random.randint(0,100,numitems)
+        ymax = ymin + np.random.randint(0,100,numitems)
 
         tree = Rbush()
-        tree.insert(minX=minX,minY=minY,maxX=maxX,maxY=maxY)
+        tree.insert(xmin=xmin,ymin=ymin,xmax=xmax,ymax=ymax)
         len(tree.all())==numitems
 
     #t('#remove removes items correctly',
@@ -381,7 +381,7 @@ class TestRbush(unittest.TestCase):
     #     tree = Rbush(4)
     #     tree.load(data);
     #
-    #     item = {'minX': 20, 'minY': 70, 'maxX': 20, 'maxY': 70, 'foo': 'bar'};
+    #     item = {'xmin': 20, 'ymin': 70, 'xmax': 20, 'ymax': 70, 'foo': 'bar'};
     #
     #     tree.insert(item);
     #     tree.remove(item, lambda a,b: a['foo'] == b['foo'])
@@ -397,7 +397,7 @@ class TestRbush(unittest.TestCase):
         for i in range(0, len(data)):
             tree.remove(data[i]);
 
-        t.assertEqual(tree.toJSON(), Rbush(4).toJSON());
+        t.assertEqual(tree.toDict(), Rbush(4).toDict());
 
 
     #t('#clear should clear all the data in the tree',
@@ -407,8 +407,8 @@ class TestRbush(unittest.TestCase):
         tree.clear()
 
         t.assertEqual(
-            tree.toJSON(),
-            Rbush(4).toJSON());
+            tree.toDict(),
+            Rbush(4).toDict());
 
 
     #t('should have chainable API',
