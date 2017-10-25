@@ -306,9 +306,7 @@ class TestRbush(unittest.TestCase):
         tree2 = Rbush()
         tree2.load(data)
 
-        with t.assertRaises(TypeError):
-            tree2.insert()
-
+        tree2.insert()
         tree2.insert({})
         t.assertEqual(tree,tree2);
 
@@ -327,6 +325,19 @@ class TestRbush(unittest.TestCase):
 
         sortedEqual(t, tree.all(), tree2.all());
 
+
+    # Insert vectors of coordinates
+    def test_insert_numpy_vectors(t):
+        numitems = 100
+        import numpy as np
+        minX = np.random.randint(0,100,numitems)
+        minY = np.random.randint(0,100,numitems)
+        maxX = minX + np.random.randint(0,100,numitems)
+        maxY = minY + np.random.randint(0,100,numitems)
+
+        tree = Rbush()
+        tree.insert(minX=minX,minY=minY,maxX=maxX,maxY=maxY)
+        len(tree.all())==numitems
 
     #t('#remove removes items correctly',
     def test_remove_items(t):

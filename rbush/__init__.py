@@ -228,13 +228,42 @@ class Rbush(object):
         self.data = root
 
 
-    def insert(self,item):
+    def insert(self,item=None,minX=None,minY=None,maxX=None,maxY=None):
         '''Insert an item'''
+        if minX is not None \
+            and minY is not None \
+            and maxX is not None \
+            and maxY is not None:
+            try:
+                liX = len(minX)
+                liY = len(minY)
+                laX = len(maxX)
+                laY = len(maxY)
+            except TypeError as e:
+                # not iterable
+                minX = [minX]
+                minY = [minY]
+                maxX = [maxX]
+                maxY = [maxY]
+            if not len(minX)==len(minY)==len(maxX)==len(maxY):
+                print("Error: Arguments 'minX','minY','maxX','maxY' have different lenghts")
+                return self
+            items = []
+            for i in range(len(minX)):
+                item = {'minX':minX[i],
+                        'minY':minY[i],
+                        'maxX':maxX[i],
+                        'maxY':maxY[i]}
+                items.append(item)
+            self.load(items)
+
         if item:
             if self.data['children']:
                 self._insert(item, self.data['height'] - 1)
             else:
                 self._createRoot(item)
+
+        return self
 
 
     def _insert(self, item, level, isNode=False):
@@ -432,6 +461,7 @@ class Rbush(object):
 
         return result
 
+
     def collides(self,bbox):
         node = self.data
         if not intersects(bbox, node):
@@ -453,12 +483,12 @@ class Rbush(object):
 
     def load(self,data):
         if not (data and len(data)):
-            return False
+            return self
         len_ = len(data)
         if (len_ < self._minEntries):
             for i in range(0,len_):
                 self.insert(data[i])
-            return True
+            return self
 
         ## recursively build the tree with the given data from scratch using OMT algorithm
         node = self._build(data[:], 0, len(data) - 1, 0)
@@ -477,11 +507,12 @@ class Rbush(object):
                 node = tmpNode
             ## insert the small tree into the large tree at appropriate level
             self._insert(node, self.data['height'] - node['height'] - 1, True)
+        return self
 
 
     def remove(self, item, equalsFn=None):
         if not item:
-            return
+            return self
 
         node = self.data
         bbox = self.toBBox(item)
@@ -508,7 +539,7 @@ class Rbush(object):
                     splice(node['children'], index, 1)
                     path.append(node)
                     self._condense(path)
-                    return
+                    return self
 
             if not goingUp and not node['leaf'] and contains(node, bbox): ## go down
                 path.append(node)
@@ -531,6 +562,7 @@ class Rbush(object):
 
             else:
                 node = None ## nothing found
+        return self
 
 
     def toBBox(self,item):
