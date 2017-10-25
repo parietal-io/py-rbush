@@ -18,6 +18,7 @@
 #     return bbox
 
 import math
+from collections import namedtuple
 
 from .quickselect import quickselect
 
@@ -38,6 +39,19 @@ _node = dict(
 #     X = None,
 #     y = None
 # )
+
+
+class RBushItem(object):
+    
+    def __init__(xmin, ymin, xmax, ymax):
+        self.xmin = xmin
+        self.ymin = xmin
+        self.xmax = xmax
+        self.ymax = ymax
+
+
+RBushTuple = namedtuple('RBushTuple', ['xmin', 'ymin', 'xmax', 'ymax'])
+
 
 def createNode(children=None):
     '''
