@@ -1,6 +1,15 @@
 # py-rbush
 Python port of JS rbush library
 
+## Tests
+
+To run the (unit) tests, type:
+
+```python
+>>> python -m unittest tests.test
+```
+
+
 ## Performance
 
 As in [JS rbush](https://github.com/mourner/rbush),
