@@ -1,16 +1,14 @@
-
-#/*eslint key-spacing: 0, comma-spacing: 0 */
 import sys
 Infinity = sys.maxsize
 
 import unittest
 
-from rbush import Rbush,RBushBox
+from rbush import Rbush
 
 # def defaultCompare(a, b):
 #     return (a.xmin - b.xmin) or (a.ymin - b.ymin) or (a.xmax - b.xmax) or (a.ymax - b.ymax);
 def defaultCompare(a):
-    return a.xmin + a.ymin + a.xmax + a.ymax
+    return a['xmin'] + a['ymin'] + a['xmax'] + a['ymax']
 
 
 def someData(n):
@@ -21,11 +19,12 @@ def someData(n):
 
 
 def arrToBBox(arr):
-    return RBushBox(
-                xmin= arr[0],
-                ymin= arr[1],
-                xmax= arr[2],
-                ymax= arr[3]
+    return dict(
+                xmin = arr[0],
+                ymin = arr[1],
+                xmax = arr[2],
+                ymax = arr[3],
+                data = None
                 )
 
 
@@ -98,38 +97,38 @@ class TestRbush(unittest.TestCase):
     #     ];
     #
     #     tree.load(data);
-        #
-        # # def byLngLat(a, b):
-        # #     return a['minLng'] - b['minLng'] or a['minLat'] - b['minLat'];
-        # def byLngLat(a):
-        #     return a['minLng'] + a['minLat']
-        #
-        # sortedEqual(t, tree.search({'xmin': -180, 'ymin': -90, 'xmax': 180, 'ymax': 90}), [
-        #     {'minLng': -115, 'minLat':  45, 'maxLng': -105, 'maxLat':  55},
-        #     {'minLng':  105, 'minLat':  45, 'maxLng':  115, 'maxLat':  55},
-        #     {'minLng':  105, 'minLat': -55, 'maxLng':  115, 'maxLat': -45},
-        #     {'minLng': -115, 'minLat': -55, 'maxLng': -105, 'maxLat': -45}
-        # ], byLngLat);
-        #
-        # sortedEqual(t, tree.search({'xmin': -180, 'ymin': -90, 'xmax': 0, 'ymax': 90}), [
-        #     {'minLng': -115, 'minLat':  45, 'maxLng': -105, 'maxLat':  55},
-        #     {'minLng': -115, 'minLat': -55, 'maxLng': -105, 'maxLat': -45}
-        # ], byLngLat);
-        #
-        # sortedEqual(t, tree.search({'xmin': 0, 'ymin': -90, 'xmax': 180, 'ymax': 90}), [
-        #     {'minLng': 105, 'minLat':  45, 'maxLng': 115, 'maxLat':  55},
-        #     {'minLng': 105, 'minLat': -55, 'maxLng': 115, 'maxLat': -45}
-        # ], byLngLat);
-        #
-        # sortedEqual(t, tree.search({'xmin': -180, 'ymin': 0, 'xmax': 180, 'ymax': 90}), [
-        #     {'minLng': -115, 'minLat': 45, 'maxLng': -105, 'maxLat': 55},
-        #     {'minLng':  105, 'minLat': 45, 'maxLng':  115, 'maxLat': 55}
-        # ], byLngLat);
-        #
-        # sortedEqual(t, tree.search({'xmin': -180, 'ymin': -90, 'xmax': 180, 'ymax': 0}), [
-        #     {'minLng':  105, 'minLat': -55, 'maxLng':  115, 'maxLat': -45},
-        #     {'minLng': -115, 'minLat': -55, 'maxLng': -105, 'maxLat': -45}
-        # ], byLngLat);
+    #
+    #     # def byLngLat(a, b):
+    #     #     return a['minLng'] - b['minLng'] or a['minLat'] - b['minLat'];
+    #     def byLngLat(a):
+    #         return a['minLng'] + a['minLat']
+    #
+    #     sortedEqual(t, tree.search({'xmin': -180, 'ymin': -90, 'xmax': 180, 'ymax': 90}), [
+    #         {'minLng': -115, 'minLat':  45, 'maxLng': -105, 'maxLat':  55},
+    #         {'minLng':  105, 'minLat':  45, 'maxLng':  115, 'maxLat':  55},
+    #         {'minLng':  105, 'minLat': -55, 'maxLng':  115, 'maxLat': -45},
+    #         {'minLng': -115, 'minLat': -55, 'maxLng': -105, 'maxLat': -45}
+    #     ], byLngLat);
+    #
+    #     sortedEqual(t, tree.search({'xmin': -180, 'ymin': -90, 'xmax': 0, 'ymax': 90}), [
+    #         {'minLng': -115, 'minLat':  45, 'maxLng': -105, 'maxLat':  55},
+    #         {'minLng': -115, 'minLat': -55, 'maxLng': -105, 'maxLat': -45}
+    #     ], byLngLat);
+    #
+    #     sortedEqual(t, tree.search({'xmin': 0, 'ymin': -90, 'xmax': 180, 'ymax': 90}), [
+    #         {'minLng': 105, 'minLat':  45, 'maxLng': 115, 'maxLat':  55},
+    #         {'minLng': 105, 'minLat': -55, 'maxLng': 115, 'maxLat': -45}
+    #     ], byLngLat);
+    #
+    #     sortedEqual(t, tree.search({'xmin': -180, 'ymin': 0, 'xmax': 180, 'ymax': 90}), [
+    #         {'minLng': -115, 'minLat': 45, 'maxLng': -105, 'maxLat': 55},
+    #         {'minLng':  105, 'minLat': 45, 'maxLng':  115, 'maxLat': 55}
+    #     ], byLngLat);
+    #
+    #     sortedEqual(t, tree.search({'xmin': -180, 'ymin': -90, 'xmax': 180, 'ymax': 0}), [
+    #         {'minLng':  105, 'minLat': -55, 'maxLng':  115, 'maxLat': -45},
+    #         {'minLng': -115, 'minLat': -55, 'maxLng': -105, 'maxLat': -45}
+    #     ], byLngLat);
 
 
     # t('#load bulk-loads the given data given max node entries and forms a proper search tree',
@@ -195,14 +194,13 @@ class TestRbush(unittest.TestCase):
     # t('#load properly merges data of smaller or bigger tree heights', function (t):
     def test_merge_trees(t):
         smaller = someData(10);
-
         tree1 = Rbush(4)
         tree1.load(data)
         tree1.load(smaller);
 
         tree2 = Rbush(4)
-        tree2    .load(smaller)
-        tree2    .load(data);
+        tree2.load(smaller)
+        tree2.load(data);
 
         t.assertEqual(tree1.toDict()['height'], tree2.toDict()['height']);
 
@@ -274,7 +272,9 @@ class TestRbush(unittest.TestCase):
         tree2 = Rbush(4)
         tree2.fromJSON(tree.toJSON());
 
-        sortedEqual(t, tree.all(), tree2.all());
+        items = tree.all()
+        items2 = tree2.all()
+        sortedEqual(t, items, items2);
 
 
     #t('#insert adds an item to an existing tree correctly',
@@ -394,9 +394,12 @@ class TestRbush(unittest.TestCase):
         tree = Rbush(4)
         tree.load(data);
 
+        # js = tree.toJSON()
+
         for i in range(0, len(data)):
             tree.remove(data[i]);
 
+        # t.assertEqual(tree.toJSON(), js);
         t.assertEqual(tree.toDict(), Rbush(4).toDict());
 
 

@@ -37,6 +37,22 @@ INF = sys.maxsize
 
 
 
+class RBushItemClass(object):
+
+    def __init__(self,xmin, ymin, xmax, ymax, data):
+        self.xmin = xmin
+        self.ymin = ymin
+        self.xmax = xmax
+        self.ymax = ymax
+        self.data = data
+    def __eq__(self,other):
+        return self.xmin==other.xmin \
+            and self.ymin==other.ymin \
+            and self.xmax==other.xmax \
+            and self.ymax==other.ymax
+
+RBushItemTuple = namedtuple('RBushItemTuple', ['xmin', 'ymin', 'xmax', 'ymax', 'data'])
+
 class RBushBoxClass(object):
 
     def __init__(self,xmin, ymin, xmax, ymax):
@@ -62,10 +78,9 @@ class RBushNodeClass(object):
 RBushNodeTuple = namedtuple('RBushTuple', ['xmin', 'ymin', 'xmax', 'ymax',
                                             'leaf', 'height', 'children'])
 
-RBushNode = RBushNodeClass
+RBushItem = RBushItemClass
 RBushBox = RBushBoxClass
-
-RBushItem = RBushBox
+RBushNode = RBushNodeClass
 
 def createNode(children=None):
     '''
@@ -82,6 +97,12 @@ def createNode(children=None):
     #             children_.append(itemFromDict(child))
     return RBushNode(INF, INF, -INF, -INF, True, 1, children_)
 
+def createItem(data=None):
+    '''
+    Create an item
+    '''
+    return RBushItem(INF, INF, -INF, -INF, None)
+
 def toBBoxNode(item):
     '''
     Simply return 'item'
@@ -90,11 +111,18 @@ def toBBoxNode(item):
         item = itemFromDict(item)
     return RBushBox(item.xmin, item.ymin, item.xmax, item.ymax)
 
+def itemToDict(item):
+    return dict(xmin=item.xmin,
+                ymin=item.ymin,
+                xmax=item.xmax,
+                ymax=item.ymax)
+
 def itemFromDict(item):
     if not isinstance(item,dict):
-        assert isinstance(item,RBushItem)
+        assert isinstance(item,createItem().__class__),print(type(item))
         return item
-    return RBushItem(item['xmin'],item['ymin'],item['xmax'],item['ymax'])
+    data = item.get('data',None)
+    return RBushItem(item['xmin'],item['ymin'],item['xmax'],item['ymax'],data)
 
 def boxFromDict(item):
     if not isinstance(item,dict):
@@ -123,6 +151,7 @@ def splice(list_,insert_position,remove_how_many,*items_to_insert):
     return removed_items
 
 def findItem(item, items, equalsFn=None):
+    item = itemFromDict(item)
     if not equalsFn:
         return items.index(item) if item in items else None
     for i in range(0, len(items)):
@@ -270,7 +299,7 @@ class Rbush(object):
 
 
     def _createRoot(self,item=None):
-        _children = [item] if item else []
+        _children = [itemFromDict(item)] if item else []
         root = createNode(children=_children)
         root.height = 1
         root.leaf = True
@@ -300,7 +329,7 @@ class Rbush(object):
                 return self
             items = []
             for i in range(len(xmin)):
-                items.append( RBushItem(xmin[i],ymin[i],xmax[i],ymax[i]) )
+                items.append( RBushItem(xmin[i],ymin[i],xmax[i],ymax[i], None) )
             self.load(items)
 
         if item:
@@ -467,7 +496,11 @@ class Rbush(object):
 
 
     def all(self):
-        return self._all(self.data, [])
+        all_ = self._all(self.data, [])
+        items = []
+        for item in all_:
+            items.append(itemToDict(item))
+        return items
 
 
     def _all(self, node, result):
@@ -509,7 +542,10 @@ class Rbush(object):
                         nodesToSearch.append(child)
             node = nodesToSearch.pop() if len(nodesToSearch) else None
 
-        return result
+        items = []
+        for item in result:
+            items.append(itemToDict(item))
+        return items
 
 
     def collides(self,bbox):
@@ -536,16 +572,24 @@ class Rbush(object):
         return False
 
     def load(self,data):
+        # If data is empty or None, do nothing
         if not (data and len(data)):
             return self
+
+        # If data is small (smaller than the minimum entries), just insert one-by-one
         len_ = len(data)
         if (len_ < self._minEntries):
             for i in range(0,len_):
                 self.insert(data[i])
             return self
 
+        items = []
+        for item in data:
+            items.append( itemFromDict(item) )
+        data = items
+
         ## recursively build the tree with the given data from scratch using OMT algorithm
-        node = self._build(data[:], 0, len(data) - 1, 0)
+        node = self._build(data, 0, len(data) - 1, 0)
 
         if not len(self.data.children):
             ## save as is if tree is empty
@@ -589,7 +633,6 @@ class Rbush(object):
                 index = findItem(item, node.children, equalsFn)
                 if index is not None:
                     ## item found, remove the item and condense tree upwards
-                    # node.children.splice(index, 1)
                     splice(node.children, index, 1)
                     path.append(node)
                     self._condense(path)
@@ -605,13 +648,10 @@ class Rbush(object):
 
             elif parent: ## go right
                 i=i+1
-                # if len(parent.children)<i:
                 try:
                     node = parent.children[i]
                 except IndexError as e:
                     node = None
-                # else:
-                #     node = None
                 goingUp = False
 
             else:
@@ -660,34 +700,35 @@ class Rbush(object):
         import json
         return json.dumps(self.toDict())
 
-    def nodeFromJSON(self,dict):
+    def nodeFromJSON(self,dict_):
         # content = { k:str(v) for k,v in vars(node).items() }
-        item = RBushItem(dict.pop('xmin'),
-                            dict.pop('ymin'),
-                            dict.pop('xmax'),
-                            dict.pop('ymax'))
         try:
             children = []
-            for child in dict['children']:
+            for child in dict_['children']:
                 children.append( self.nodeFromJSON(child) )
-            node = RBushNode()
-            node.xmin = item.xmin
-            node.ymin = item.ymin
-            node.xmax = item.xmax
-            node.ymax = item.ymax
-            node.leaf = dict['leaf']
-            node.height = dict['height']
-            node.children = children
-        except:
-            node = item
+            node = RBushNode(dict_['xmin'],
+                             dict_['ymin'],
+                             dict_['xmax'],
+                             dict_['ymax'],
+                             dict_['leaf'],
+                             dict_['height'],
+                             children)
+        except Exception as e:
+            node = RBushItem(dict_['xmin'],
+                             dict_['ymin'],
+                             dict_['xmax'],
+                             dict_['ymax'],
+                             dict_.get('data',None))
         return node
 
     def fromDict(self,dict):
         return self.nodeFromJSON(dict)
-        
+
     def fromJSON(self,data):
         import json
         self.data = self.fromDict(json.loads(data))
+
+
 
     def _build(self, items, left, right, height):
         N = right - left + 1
@@ -696,7 +737,7 @@ class Rbush(object):
 
         if N <= M:
             ## reached leaf level; return leaf
-            node = createNode(items[left : right + 1])
+            node = createNode(children=items[left : right + 1])
             self.calcBBox(node)
             return node
 
@@ -707,7 +748,7 @@ class Rbush(object):
             ## target number of root entries to maximize storage utilization
             M = math.ceil(N / math.pow(M, height - 1))
 
-        node = createNode([])
+        node = createNode()
         node.leaf = False
         node.height = height
 
