@@ -367,6 +367,7 @@ class Rbush(object):
         adjustParentBBoxes(bbox, insertPath, level)
 
     # split overflowed node into two def _split(self, insertPath, level):
+    def _split(self, insertPath, level):
 
         m = self._minEntries
         node = insertPath[level]
