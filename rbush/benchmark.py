@@ -5,7 +5,7 @@ import math
 from rbush import Rbush
 from rbush.data import generate_data
 
-N_insert = 2*10**5
+N_insert = 10**5
 N_search = 10**3
 maxEntries = 9
 

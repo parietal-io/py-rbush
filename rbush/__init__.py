@@ -3,12 +3,27 @@ from collections import namedtuple
 
 from .quickselect import quickselect
 
-import sys
-INF = sys.maxsize
-# import numpy
-# INF = numpy.inf
+# import sys
+# INF = sys.maxsize
+import numpy
+INF = numpy.inf
+# INF = 999
 
-class RBushItemClass(object):
+from numba import njit
+from numba import jitclass
+from numba import deferred_type, optional
+from numba import float64,int16,int32,char,boolean
+
+
+spec = [
+    ('xmin',float64),
+    ('ymin',float64),
+    ('xmax',float64),
+    ('ymax',float64),
+    ('data',int32),
+]
+@jitclass(spec)
+class RBushItem(object):
 
     def __init__(self, xmin, ymin, xmax, ymax, data):
         self.xmin = xmin
@@ -17,18 +32,27 @@ class RBushItemClass(object):
         self.ymax = ymax
         self.data = data
 
-    def __eq__(self, other):
-        return self.xmin == other.xmin \
-            and self.ymin == other.ymin \
-            and self.xmax == other.xmax \
-            and self.ymax == other.ymax
+    # def __eq__(self, other):
+    #     return self.xmin == other.xmin \
+    #         and self.ymin == other.ymin \
+    #         and self.xmax == other.xmax \
+    #         and self.ymax == other.ymax
 
+item_type = deferred_type()
+item_type.define(RBushItem.class_type.instance_type)
 
 # RBushItemTuple = namedtuple('RBushItemTuple', ['xmin', 'ymin', 'xmax',
 #                                                'ymax', 'data'])
 
 
-class RBushBoxClass(object):
+spec = [
+    ('xmin',float64),
+    ('ymin',float64),
+    ('xmax',float64),
+    ('ymax',float64),
+]
+@jitclass(spec)
+class RBushBox(object):
 
     def __init__(self, xmin, ymin, xmax, ymax):
         self.xmin = xmin
@@ -36,44 +60,92 @@ class RBushBoxClass(object):
         self.xmax = xmax
         self.ymax = ymax
 
+box_type = deferred_type()
+box_type.define(RBushBox.class_type.instance_type)
 
 # RBushBoxTuple = namedtuple('RBushTuple', ['xmin', 'ymin', 'xmax', 'ymax'])
 
 
-class RBushNodeClass(object):
+node_type = deferred_type()
 
-    def __init__(self, xmin, ymin, xmax, ymax, leaf, height, children):
+stack_type = deferred_type()
+spec = [
+    ('data', optional(node_type)),
+    ('next', optional(stack_type))
+]
+@jitclass(spec)
+class Stack(object):
+    def __init__(self, data, next):
+        self.data = data
+        self.next = next
+
+stack_type.define(Stack.class_type.instance_type)
+
+@njit
+def push(stack, data):
+    return Stack(data, stack)
+@njit
+def pop(stack):
+    return stack.next
+@njit
+def make_stack(data):
+    return push(None, data)
+
+
+spec = [
+    ('xmin',float64),
+    ('ymin',float64),
+    ('xmax',float64),
+    ('ymax',float64),
+    ('data',optional(int32)),
+    ('leaf',optional(boolean)),
+    ('height',optional(int16)),
+    ('children',optional(Stack.class_type.instance_type))
+]
+@jitclass(spec)
+class RBushNode(object):
+
+    # def __init__(self, xmin, ymin, xmax, ymax, leaf, height, children):
+    def __init__(self, xmin, ymin, xmax, ymax):
         self.xmin = xmin
         self.ymin = ymin
         self.xmax = xmax
         self.ymax = ymax
-        self.leaf = leaf
-        self.height = height
-        self.children = children
+        # self.leaf = leaf
+        # self.height = height
+        # self.children = children
+        # self.data = None
+        # self.leaf = None
+        # self.height = None
+        # self.children = None
+
+node_type.define(RBushNode.class_type.instance_type)
 
 
-# RBushNodeTuple = namedtuple('RBushTuple', ['xmin', 'ymin', 'xmax', 'ymax',
-#                                            'leaf', 'height', 'children'])
+RBushItem = RBushNode
+RBushBox = RBushNode
 
 
-RBushItem = RBushItemClass
-RBushBox = RBushBoxClass
-RBushNode = RBushNodeClass
-
-
-def createNode(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF, leaf=True, height=1, children=None):
+def createNode(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
+                    leaf=True, height=1, children=None):
     '''
     Create a node (leaf,parent or bbox)
     '''
     children = children or []
-    return RBushNode(xmin, ymin, xmax, ymax, leaf, height, children)
+    node = RBushNode(xmin, ymin, xmax, ymax)
+    # node.leaf = leaf
+    # node.height = height
+    # node.children = children
+    return node
 
 
 def createItem(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF, data=None):
     '''
     Create an item
     '''
-    return RBushItem(xmin, ymin, xmax, ymax, data)
+    item = RBushItem(xmin, ymin, xmax, ymax)
+    item.data = data
+    return item
 
 def createBox(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF):
     '''
@@ -145,6 +217,7 @@ def findItem(item, items, equalsFn=None):
 
 
 # TODO: EASY JIT
+
 def extend(a, b):
     """Return 'a' box enlarged by 'b'"""
     a.xmin = min(a.xmin, b.xmin)
@@ -154,24 +227,17 @@ def extend(a, b):
     return a
 
 
-# TODO: What is up with these functions here?
-# function compareNodexmin(a, b) { return a.xmin - b.xmin; }
 def compareNodexmin(a):
     return a.xmin  # - b.xmin
 
 
-# TODO: What is up with these functions here?
-# function compareNodeymin(a, b) { return a.ymin - b.ymin; }
 def compareNodeymin(a):
     return a.ymin  # - b.ymin
 
 
-# function bboxArea(a)   { return (a.xmax - a.xmin) * (a.ymax - a.ymin); }
 def bboxArea(a):
     return (a.xmax - a.xmin) * (a.ymax - a.ymin)
 
-
-# function bboxMargin(a) { return (a.xmax - a.xmin) + (a.ymax - a.ymin); }
 def bboxMargin(a):
     return (a.xmax - a.xmin) + (a.ymax - a.ymin)
 
@@ -273,8 +339,7 @@ class Rbush(object):
 
         self._maxEntries = max(4, maxEntries or self._defaultMaxEntries)
         self._minEntries = max(2, math.ceil(self._maxEntries * 0.4))
-        self._initFormat(axes_format)
-        # self._createRoot()
+        # self._initFormat(axes_format)
         self.data = createNode()
 
     def __eq__(self, other):
@@ -288,14 +353,6 @@ class Rbush(object):
         new.fromJSON(self.toJSON())
         assert new == self
         return new
-
-    # def _createRoot(self, item=None):
-    #     _children = [itemFromDict(item)] if item else []
-    #     root = createNode(children=_children)
-    #     root.height = 1
-    #     root.leaf = True
-    #     self.calcBBox(root)
-    #     self.data = root
 
     def insert(self, item=None, xmin=None, ymin=None, xmax=None, ymax=None):
         '''Insert an item'''

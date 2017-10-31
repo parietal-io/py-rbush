@@ -1,8 +1,3 @@
-# 'use strict';
-#
-# module.exports = function (arr, k, left, right, compare) {
-#     quickselect(arr, k, left || 0, right || (arr.length - 1), compare || defaultCompare);
-# };
 import math
 
 def quickselect(arr, k, left, right, compare):
