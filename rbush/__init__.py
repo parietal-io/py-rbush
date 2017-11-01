@@ -7,73 +7,45 @@ from .quickselect import quickselect
 # INF = sys.maxsize
 import numpy
 INF = numpy.inf
-# INF = 999
+
 
 from numba import njit
 from numba import jitclass
 from numba import deferred_type, optional
 from numba import float64,int16,int32,char,boolean
 
+stack_type = deferred_type()
 
-spec = [
+node_type = deferred_type()
+node_spec = [
     ('xmin',float64),
     ('ymin',float64),
     ('xmax',float64),
     ('ymax',float64),
-    ('data',int32),
+    ('data',optional(int32)),
+    ('leaf',optional(boolean)),
+    ('height',optional(int16)),
+    ('children',optional(stack_type))
 ]
-@jitclass(spec)
-class RBushItem(object):
-
-    def __init__(self, xmin, ymin, xmax, ymax, data):
-        self.xmin = xmin
-        self.ymin = ymin
-        self.xmax = xmax
-        self.ymax = ymax
-        self.data = data
-
-    # def __eq__(self, other):
-    #     return self.xmin == other.xmin \
-    #         and self.ymin == other.ymin \
-    #         and self.xmax == other.xmax \
-    #         and self.ymax == other.ymax
-
-item_type = deferred_type()
-item_type.define(RBushItem.class_type.instance_type)
-
-# RBushItemTuple = namedtuple('RBushItemTuple', ['xmin', 'ymin', 'xmax',
-#                                                'ymax', 'data'])
-
-
-spec = [
-    ('xmin',float64),
-    ('ymin',float64),
-    ('xmax',float64),
-    ('ymax',float64),
-]
-@jitclass(spec)
-class RBushBox(object):
+@jitclass(node_spec)
+class RBushNode(object):
 
     def __init__(self, xmin, ymin, xmax, ymax):
         self.xmin = xmin
         self.ymin = ymin
         self.xmax = xmax
         self.ymax = ymax
+        self.data = None
+        self.leaf = None
+        self.height = None
+        self.children = None
+node_type.define(RBushNode.class_type.instance_type)
 
-box_type = deferred_type()
-box_type.define(RBushBox.class_type.instance_type)
-
-# RBushBoxTuple = namedtuple('RBushTuple', ['xmin', 'ymin', 'xmax', 'ymax'])
-
-
-node_type = deferred_type()
-
-stack_type = deferred_type()
-spec = [
-    ('data', optional(node_type)),
+stack_spec = [
+    ('data', node_type),
     ('next', optional(stack_type))
 ]
-@jitclass(spec)
+@jitclass(stack_spec)
 class Stack(object):
     def __init__(self, data, next):
         self.data = data
@@ -84,42 +56,75 @@ stack_type.define(Stack.class_type.instance_type)
 @njit
 def push(stack, data):
     return Stack(data, stack)
-@njit
-def pop(stack):
-    return stack.next
-@njit
-def make_stack(data):
-    return push(None, data)
+
+def length(stack):
+    i = 0
+    while stack:
+        stack = stack.next
+        i+=1
+    return i
+# @njit
+# def pop(stack):
+#     return stack.next
+# @njit
+# def make_stack(data):
+#     return push(None, data)
+
+# from numba.types.containers import List
+# from numba import void
 
 
-spec = [
-    ('xmin',float64),
-    ('ymin',float64),
-    ('xmax',float64),
-    ('ymax',float64),
-    ('data',optional(int32)),
-    ('leaf',optional(boolean)),
-    ('height',optional(int16)),
-    ('children',optional(Stack.class_type.instance_type))
-]
-@jitclass(spec)
-class RBushNode(object):
+# spec = [
+#     ('xmin',float64),
+#     ('ymin',float64),
+#     ('xmax',float64),
+#     ('ymax',float64),
+#     ('data',int32),
+# ]
+# @jitclass(spec)
+# class RBushItem(object):
+#
+#     def __init__(self, xmin, ymin, xmax, ymax, data):
+#         self.xmin = xmin
+#         self.ymin = ymin
+#         self.xmax = xmax
+#         self.ymax = ymax
+#         self.data = data
+#
+#     # def __eq__(self, other):
+#     #     return self.xmin == other.xmin \
+#     #         and self.ymin == other.ymin \
+#     #         and self.xmax == other.xmax \
+#     #         and self.ymax == other.ymax
+#
+# item_type = deferred_type()
+# item_type.define(RBushItem.class_type.instance_type)
+#
+# # RBushItemTuple = namedtuple('RBushItemTuple', ['xmin', 'ymin', 'xmax',
+# #                                                'ymax', 'data'])
+#
+#
+# spec = [
+#     ('xmin',float64),
+#     ('ymin',float64),
+#     ('xmax',float64),
+#     ('ymax',float64),
+# ]
+# @jitclass(spec)
+# class RBushBox(object):
+#
+#     def __init__(self, xmin, ymin, xmax, ymax):
+#         self.xmin = xmin
+#         self.ymin = ymin
+#         self.xmax = xmax
+#         self.ymax = ymax
+#
+# box_type = deferred_type()
+# box_type.define(RBushBox.class_type.instance_type)
 
-    # def __init__(self, xmin, ymin, xmax, ymax, leaf, height, children):
-    def __init__(self, xmin, ymin, xmax, ymax):
-        self.xmin = xmin
-        self.ymin = ymin
-        self.xmax = xmax
-        self.ymax = ymax
-        # self.leaf = leaf
-        # self.height = height
-        # self.children = children
-        # self.data = None
-        # self.leaf = None
-        # self.height = None
-        # self.children = None
+# RBushBoxTuple = namedtuple('RBushTuple', ['xmin', 'ymin', 'xmax', 'ymax'])
 
-node_type.define(RBushNode.class_type.instance_type)
+
 
 
 RBushItem = RBushNode
@@ -131,11 +136,10 @@ def createNode(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
     '''
     Create a node (leaf,parent or bbox)
     '''
-    children = children or []
     node = RBushNode(xmin, ymin, xmax, ymax)
-    # node.leaf = leaf
-    # node.height = height
-    # node.children = children
+    node.leaf = leaf
+    node.height = height
+    node.children = children
     return node
 
 
@@ -217,7 +221,6 @@ def findItem(item, items, equalsFn=None):
 
 
 # TODO: EASY JIT
-
 def extend(a, b):
     """Return 'a' box enlarged by 'b'"""
     a.xmin = min(a.xmin, b.xmin)
@@ -225,7 +228,6 @@ def extend(a, b):
     a.xmax = max(a.xmax, b.xmax)
     a.ymax = max(a.ymax, b.ymax)
     return a
-
 
 def compareNodexmin(a):
     return a.xmin  # - b.xmin
@@ -271,8 +273,6 @@ def intersects(a, b):
 def multiSelect(items, left, right, n, compare):
     stack = [left, right]
     mid = None
-    # FIXME: I don't like the object being checked (i.e, 'stack') being
-    #       modified inside of the loop...probably change that.
     while len(stack):
         right = stack.pop()
         left = stack.pop()
@@ -289,11 +289,13 @@ def chooseSubtree(bbox, node, level, path):
 
     Traverse the subtree searching for the tightest path,
     the node at the end, closest to bbox is returned
+
     '''
     while True:
-
+        print(node)
         path.append(node)
 
+        print(node.leaf,path,level)
         if node.leaf or (len(path)-1 == level):
             break
 
@@ -302,6 +304,9 @@ def chooseSubtree(bbox, node, level, path):
 
         targetNode = None
         for child in node.children:
+            print(child)
+        # while part is not None:
+        #     child = part.data
             area = bboxArea(child)
             enlargement = enlargedArea(bbox, child) - area
 
@@ -316,6 +321,7 @@ def chooseSubtree(bbox, node, level, path):
                     if (area < minArea):
                         minArea = area
                         targetNode = child
+            # part = part.next
 
         node = targetNode or node.children[0]
 
@@ -399,12 +405,12 @@ class Rbush(object):
         node = chooseSubtree(bbox, root, level, insertPath)
 
         # put the item into the node
-        node.children.append(item)
+        node.children = push(node.children,item)
         extend(node, bbox)
 
         # split on node overflow; propagate upwards if necessary
         while level >= 0:
-            if len(insertPath[level].children) > self._maxEntries:
+            if length(insertPath[level].children) > self._maxEntries:
                 self._split(insertPath, level)
                 level = level - 1
             else:
@@ -542,14 +548,16 @@ class Rbush(object):
     def _all(self, node, result):
         nodesToSearch = []
         while node:
+            l = []
+            child = node.children
+            while child:
+                l.append(child.data)
+                child = child.next
             if node.leaf:
-                # result.push.apply(result, node.children);
-                result.extend(node.children)
-                # result.append(node['data'])
+                result.extend(l)
             else:
-                nodesToSearch.extend(node.children)
+                nodesToSearch.extend(l)
             node = nodesToSearch.pop() if len(nodesToSearch) else None
-
         return result
 
     def search(self, bbox):
@@ -797,14 +805,21 @@ class Rbush(object):
 
 def nodeToJSON(node):
     # content = { k:str(v) for k,v in vars(node).items() }
-    content = vars(node).copy()
-    try:
+    content = dict( xmin=node.xmin,
+                    ymin=node.ymin,
+                    xmax=node.xmax,
+                    ymax=node.ymax )
+    if node.children is not None:
+        content['leaf'] = node.leaf
+        content['height'] = node.height
         children = []
-        for child in node.children:
-            children.append(nodeToJSON(child))
+        child = node.children
+        while child:
+            children.append(nodeToJSON(child.data))
+            child = child.next
         content['children'] = children
-    except:
-        pass
+    else:
+        content['data'] = node.data
     return content
 
 def nodeFromJSON(dict_):
