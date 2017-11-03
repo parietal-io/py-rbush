@@ -57,18 +57,113 @@ stack_type.define(Stack.class_type.instance_type)
 def push(stack, data):
     return Stack(data, stack)
 
+def insert(stack,index,item):
+    assert isinstance(stack,Stack)
+    child = stack
+    cursor = None
+    i = 0
+    while child:
+        if index == i:
+            break
+        i = i+1
+        cursor = child
+        child = child.next
+    assert child is not None, "Error: index {:d} out of range".format(index)
+    new = push(child,item)
+    cursor.next = new
+    return stack
+
+#@njit
+def remove(stack,index):
+    assert isinstance(stack,Stack)
+    if not index:
+        return stack.next
+    child = stack
+    i = 0
+    while child:
+        if index == i:
+            break
+        i = i+1
+        prev = child
+        child = child.next
+    # if index > i or child is None:
+    #     return None
+    assert child is not None, "Error: index {:d} out of range".format(index)
+    prev.next = child.next
+    # del child
+    return stack
+
+@njit
+def make_stack(data):
+    return push(None, data)
+
 def length(stack):
     i = 0
     while stack:
         stack = stack.next
         i+=1
     return i
-# @njit
-# def pop(stack):
-#     return stack.next
-# @njit
-# def make_stack(data):
-#     return push(None, data)
+
+def default_compare(a):
+    return a.min
+
+def sort(stack,compare=None):
+        child = stack
+        compare_ = compare or default_compare
+        min_ = INF
+        out = None
+        while True:
+            cnt = 0
+            tmp = None
+            while child:
+                if child.next is None:
+                    tmp = push(tmp,child.data)
+                    break
+                next_ = child.next
+                if compare(child.data) - compare(next_.data) <= 0:
+                    tmp = push(tmp,child.data)
+                else:
+                    cnt += 1
+                    tmp = push(tmp,next_.data)
+                child = next_
+            if not cnt:
+                out = tmp
+                break
+            child = tmp
+        return out
+
+def get(stack,index):
+    assert isinstance(stack,Stack)
+    i = 0
+    child = stack
+    while child:
+        if index == i:
+            break
+        i = i+1
+        child = child.next
+    assert child is not None, "Error: index {:d} out of range".format(index)
+    # if index > i or child is None:
+    #     return None
+    return child.data
+
+
+class Children(object):
+    def __init__(self,stack):
+        self.stack = stack
+
+    def __len__(self):
+        return length(self.stack)
+
+    def __iter__(self):
+        child = self.stack
+        while child:
+            yield child
+            child = child.next
+        yield child
+
+    def sort(self,key):
+        return Children(sort(self.stack,key))
+
 
 # from numba.types.containers import List
 # from numba import void
@@ -139,7 +234,11 @@ def createNode(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
     node = RBushNode(xmin, ymin, xmax, ymax)
     node.leaf = leaf
     node.height = height
-    node.children = children
+    if children:
+        for child in children:
+            node.children = push(node.children,child)
+    else:
+        node.children = None
     return node
 
 
@@ -204,18 +303,32 @@ def nodeFromDict(item):
 def splice(list_, insert_position, remove_how_many, *items_to_insert):
     removed_items = []
     for i in range(remove_how_many):
-        removed_items.append(list_.pop(insert_position))
+        item = get(list_,insert_position)
+        list_ = remove(list_,insert_position)
+        removed_items.append(item)
     for item in items_to_insert[::-1]:
-        list_.insert(insert_position, item)
-    return removed_items
+        list_ = insert(list_,insert_position, item)
+    return removed_items,list_
 
+
+def index(stack,item):
+    child = stack
+    i = 0
+    while child:
+        data = child.data
+        if all([item.xmin==data.xmin,item.ymin==data.ymin,
+                item.xmax==data.xmax,item.ymax==data.ymax]):
+            return i
+        i+=1
+        child = child.next
+    return None
 
 def findItem(item, items, equalsFn=None):
     item = itemFromDict(item)
     if not equalsFn:
-        return items.index(item) if item in items else None
-    for i in range(0, len(items)):
-        if equalsFn(item, items[i]):
+        return index(items,item)
+    for i in range(0, length(items)):
+        if equalsFn(item, get(items,i)):
             return i
     return None
 
@@ -292,10 +405,8 @@ def chooseSubtree(bbox, node, level, path):
 
     '''
     while True:
-        print(node)
         path.append(node)
 
-        print(node.leaf,path,level)
         if node.leaf or (len(path)-1 == level):
             break
 
@@ -303,27 +414,25 @@ def chooseSubtree(bbox, node, level, path):
         minArea = INF
 
         targetNode = None
-        for child in node.children:
-            print(child)
-        # while part is not None:
-        #     child = part.data
-            area = bboxArea(child)
-            enlargement = enlargedArea(bbox, child) - area
+        child = node.children
+        while child:
+            area = bboxArea(child.data)
+            enlargement = enlargedArea(bbox, child.data) - area
 
             # choose entry with the least area enlargement
             if (enlargement < minEnlargement):
                 minEnlargement = enlargement
                 minArea = area if area < minArea else minArea
-                targetNode = child
+                targetNode = child.data
             else:
                 if (enlargement == minEnlargement):
                     # otherwise choose one with the smallest area
                     if (area < minArea):
                         minArea = area
-                        targetNode = child
-            # part = part.next
+                        targetNode = child.data
+            child = child.next
 
-        node = targetNode or node.children[0]
+        node = targetNode or node.children.data
 
     # NOTE: 'node' is returned, 'path' was modified (i.e, filled)
     return node
@@ -431,16 +540,18 @@ class Rbush(object):
         # If an optimal index was not found, split at the minEntries
         splitIndex = splitIndex or m
 
-        numChildren = len(node.children) - splitIndex
-        adopted = splice(node.children, splitIndex, numChildren)
-        newNode = createNode(height=node.height,leaf=node.leaf,children=adopted)
-
+        numChildren = length(node.children) - splitIndex
+        adopted,node.children = splice(node.children, splitIndex, numChildren)
+        newNode = createNode(height=node.height,
+                             leaf=node.leaf,
+                             children=adopted)
         # Update the sizes (limits) of each box
         self.calcBBox(node)
         self.calcBBox(newNode)
 
         if level:
-            insertPath[level-1].children.append(newNode)
+            node = insertPath[level-1]
+            node.children = push(node.children,newNode)
         else:
             self._splitRoot(node, newNode)
 
@@ -460,7 +571,7 @@ class Rbush(object):
         # if total distributions margin value is minimal for x, sort by xmin,
         # otherwise it's already sorted by ymin
         if (xMargin < yMargin):
-            node.children.sort(key=self.comparexmin)
+            node.children = sort(node.children,compare=self.comparexmin)
 
     # total margin of all possible split distributions
     # where each node is at least m full
@@ -468,24 +579,26 @@ class Rbush(object):
         '''
         Return the size of all combinations of bounding-box to split
         '''
-        M = len(node.children)
+        assert isinstance(node,RBushNode)
+
+        M = length(node.children)
         m = minEntries
 
         # The sorting of (children) nodes according to an axis,
         # "compare-X/Y", guides the search for where to split
-        node.children.sort(key=compare)
+        node.children = sort(node.children,compare=compare)
 
         leftBBox = self.distBBox(node, 0, m)
         rightBBox = self.distBBox(node, M - m, M)
         margin = bboxMargin(leftBBox) + bboxMargin(rightBBox)
 
         for i in range(m, M - m):
-            child = node.children[i]
+            child = get(node.children,i)
             extend(leftBBox, child)
             margin = margin + bboxMargin(leftBBox)
 
         for i in range(M-m-1, m-1, -1):
-            child = node.children[i]
+            child = get(node.children,i)
             extend(rightBBox, child)
             margin = margin + bboxMargin(rightBBox)
 
@@ -498,7 +611,7 @@ class Rbush(object):
         Split position tries to minimize (primarily) the boxes overlap
         and, secondly, the area cover by each combination of boxes.
         '''
-        M = len(node.children)
+        M = length(node.children)
         m = minEntries
 
         minArea = INF
@@ -572,17 +685,20 @@ class Rbush(object):
 
         nodesToSearch = []
         while node:
-            len_ = len(node.children)
-            for i in range(0, len_):
-                child = node.children[i]
-                childBBox = self.toBBox(child) if node.leaf else child
+            child = node.children
+            while child:
+            # len_ = length(node.children)
+            # for i in range(0, len_):
+            #     child = node.children[i]
+                childBBox = self.toBBox(child.data) if node.leaf else child.data
                 if intersects(bbox, childBBox):
                     if node.leaf:
-                        result.append(child)
+                        result.append(child.data)
                     elif contains(bbox, childBBox):
-                        self._all(child, result)
+                        self._all(child.data, result)
                     else:
-                        nodesToSearch.append(child)
+                        nodesToSearch.append(child.data)
+                child = child.next
             node = nodesToSearch.pop() if len(nodesToSearch) else None
 
         items = []
@@ -634,7 +750,7 @@ class Rbush(object):
         # from scratch using OMT algorithm
         node = self._build(data, 0, len(data) - 1, 0)
 
-        if not len(self.data.children):
+        if not length(self.data.children):
             # save as is if tree is empty
             self.data = node
         elif (self.data.height == node.height):
@@ -675,7 +791,7 @@ class Rbush(object):
                 index = findItem(item, node.children, equalsFn)
                 if index is not None:
                     # item found, remove the item and condense tree upwards
-                    splice(node.children, index, 1)
+                    rem,node.children = splice(node.children, index, 1)
                     path.append(node)
                     self._condense(path)
                     return self
@@ -687,13 +803,16 @@ class Rbush(object):
                     indexes.append(i)
                 i = 0
                 parent = node
-                node = node.children[0]
+                node = node.children.data
 
             elif parent:  # go right
                 i += 1
-                try:
-                    node = parent.children[i]
-                except IndexError as e:
+                # try:
+                if length(parent.children) > i:
+                    node = get(parent.children,i)
+                # except IndexError as e:
+                #     node = None
+                else:
                     node = None
                 goingUp = False
 
@@ -706,13 +825,15 @@ class Rbush(object):
 
     def calcBBox(self, node):
         """Update node sizes after its children"""
-        return self.distBBox(node, 0, len(node.children), node)
+        return self.distBBox(node, 0, length(node.children), node)
 
     def distBBox(self, node, left_child, right_child, destNode=None):
         """Return a node enlarged by all children between left/right"""
         destNode = createNode() if destNode is None else destNode
         for i in range(left_child, right_child):
-            child = node.children[i]
+            child = get(node.children,i)
+            if not child:
+                continue
             extend(destNode, self.toBBox(child) if node.leaf else child)
         return destNode
 
@@ -770,7 +891,8 @@ class Rbush(object):
             for j in range(i, right2+1, N2):
                 right3 = min(j + N2 - 1, right2)
                 # pack each entry recursively
-                node.children.append(self._build(items, j, right3, height - 1))
+                node.children = push(node.children,
+                                    self._build(items, j, right3, height - 1))
         self.calcBBox(node)
 
         return node
@@ -779,10 +901,10 @@ class Rbush(object):
         # go through the path, removing empty nodes and updating bboxes
         siblings = None
         for i in range(len(path)-1, -1, -1):
-            if len(path[i].children) == 0:
+            if length(path[i].children) == 0:
                 if (i > 0):
                     siblings = path[i - 1].children
-                    splice(siblings, siblings.index(path[i]), 1)
+                    rem,siblings = splice(siblings, siblings.index(path[i]), 1)
                 else:
                     self.clear()
             else:
