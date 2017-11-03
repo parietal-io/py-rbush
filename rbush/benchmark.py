@@ -5,11 +5,15 @@ import math
 from rbush import Rbush
 from rbush.data import generate_data
 
-N_insert = 2*10**5
-N_search = 10**3
+N_INSERT = 10**3
+N_REMOVE = 10**1
 maxEntries = 9
 
-def run():
+def run(N_insert=None,N_remove=None):
+    N_insert = N_insert or N_INSERT
+    N_remove = N_remove or N_REMOVE
+
+    N_search = N_remove
 
     data = generate_data(N_insert,1)
     data2 = generate_data(N_insert, 1);
@@ -92,5 +96,17 @@ def run():
     t_search1 = search(tree,bboxes1)
     print('{:d} searchs in ~0.01%: {:.5f}'.format(N_search,t_search1))
 
+def usage():
+    print(' Usage:\n\t python benchmark.py [n_insert] [n_remove]')
+
 if __name__ == '__main__':
-    run()
+    import sys
+
+    try:
+        N_remove = int(sys.argv[2]) if len(sys.argv) > 2 else None
+        N_insert = int(sys.argv[1]) if len(sys.argv) > 1 else None
+    except:
+        usage()
+        sys.exit(0)
+        
+    run(N_insert,N_remove)
