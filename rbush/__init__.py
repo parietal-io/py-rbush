@@ -57,12 +57,13 @@ stack_type.define(Stack.class_type.instance_type)
 def push(stack, data):
     return Stack(data, stack)
 
+@profile
 def insert(stack,index,item):
     assert isinstance(stack,Stack)
     child = stack
     cursor = None
     i = 0
-    while child:
+    while child is not None:
         if index == i:
             break
         i = i+1
@@ -73,25 +74,39 @@ def insert(stack,index,item):
     cursor.next = new
     return stack
 
-#@njit
+@profile
+# @njit
 def remove(stack,index):
-    assert isinstance(stack,Stack)
-    if not index:
-        return stack.next
     child = stack
     i = 0
-    while child:
+    while child is not None:
         if index == i:
             break
         i = i+1
         prev = child
         child = child.next
-    # if index > i or child is None:
-    #     return None
-    assert child is not None, "Error: index {:d} out of range".format(index)
-    prev.next = child.next
-    # del child
+    if index == 0:
+        stack = stack.next
+    else:
+        prev.next = child.next
+    # ? del child ?
     return stack
+    #
+    ### the block above works fine out from Numba,
+    ###  it complains on returning 'child.next'
+    # Here I will rebuild the stack, let's see if it works...
+    # out = None
+    # item = stack
+    # i=-1
+    # while item is not None:
+    #     i+=1
+    #     if i==index:
+    #         item = item.next
+    #         continue
+    #     out = push(out,item)
+    #     item = item.next
+    # return out
+
 
 @njit
 def make_stack(data):
@@ -107,15 +122,17 @@ def length(stack):
 def default_compare(a):
     return a.min
 
+@profile
+#@njit   # Numba complains about 'compare': a class method, non-recognised
 def sort(stack,compare=None):
         child = stack
-        compare_ = compare or default_compare
+        compare = compare or default_compare
         min_ = INF
         out = None
         while True:
             cnt = 0
             tmp = None
-            while child:
+            while child is not None:
                 if child.next is None:
                     tmp = push(tmp,child.data)
                     break
@@ -132,19 +149,33 @@ def sort(stack,compare=None):
             child = tmp
         return out
 
+@profile
+@njit
 def get(stack,index):
-    assert isinstance(stack,Stack)
+#    assert isinstance(stack,Stack)
     i = 0
     child = stack
-    while child:
+    while child is not None:
         if index == i:
             break
         i = i+1
         child = child.next
-    assert child is not None, "Error: index {:d} out of range".format(index)
-    # if index > i or child is None:
-    #     return None
+    # assert child is not None, "Error: index {:d} out of range".format(index)
     return child.data
+
+@profile
+@njit
+def index(stack,item):
+    child = stack
+    i = 0
+    while child is not None:
+        data = child.data
+        if item.xmin==data.xmin and item.ymin==data.ymin \
+            and item.xmax==data.xmax and item.ymax==data.ymax:
+            return i
+        i+=1
+        child = child.next
+    return None
 
 
 class Children(object):
@@ -156,7 +187,7 @@ class Children(object):
 
     def __iter__(self):
         child = self.stack
-        while child:
+        while child is not None:
             yield child
             child = child.next
         yield child
@@ -226,6 +257,7 @@ RBushItem = RBushNode
 RBushBox = RBushNode
 
 
+@profile
 def createNode(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
                     leaf=True, height=1, children=None):
     '''
@@ -300,6 +332,7 @@ def nodeFromDict(item):
                       children=item.children)
 
 
+@profile
 def splice(list_, insert_position, remove_how_many, *items_to_insert):
     removed_items = []
     for i in range(remove_how_many):
@@ -311,18 +344,7 @@ def splice(list_, insert_position, remove_how_many, *items_to_insert):
     return removed_items,list_
 
 
-def index(stack,item):
-    child = stack
-    i = 0
-    while child:
-        data = child.data
-        if all([item.xmin==data.xmin,item.ymin==data.ymin,
-                item.xmax==data.xmax,item.ymax==data.ymax]):
-            return i
-        i+=1
-        child = child.next
-    return None
-
+@profile
 def findItem(item, items, equalsFn=None):
     item = itemFromDict(item)
     if not equalsFn:
@@ -334,6 +356,7 @@ def findItem(item, items, equalsFn=None):
 
 
 # TODO: EASY JIT
+@profile
 def extend(a, b):
     """Return 'a' box enlarged by 'b'"""
     a.xmin = min(a.xmin, b.xmin)
@@ -396,6 +419,7 @@ def multiSelect(items, left, right, n, compare):
         stack.extend([left, mid, mid, right])
 
 
+@profile
 def chooseSubtree(bbox, node, level, path):
     '''
     Return the node closer to 'bbox'
@@ -415,7 +439,7 @@ def chooseSubtree(bbox, node, level, path):
 
         targetNode = None
         child = node.children
-        while child:
+        while child is not None:
             area = bboxArea(child.data)
             enlargement = enlargedArea(bbox, child.data) - area
 
@@ -438,6 +462,7 @@ def chooseSubtree(bbox, node, level, path):
     return node
 
 
+@profile
 def adjustParentBBoxes(bbox, path, level):
     # adjust bboxes along the given tree path
     for i in range(level, -1, -1):
@@ -663,7 +688,7 @@ class Rbush(object):
         while node:
             l = []
             child = node.children
-            while child:
+            while child is not None:
                 l.append(child.data)
                 child = child.next
             if node.leaf:
@@ -686,7 +711,7 @@ class Rbush(object):
         nodesToSearch = []
         while node:
             child = node.children
-            while child:
+            while child is not None:
             # len_ = length(node.children)
             # for i in range(0, len_):
             #     child = node.children[i]
@@ -936,7 +961,7 @@ def nodeToJSON(node):
         content['height'] = node.height
         children = []
         child = node.children
-        while child:
+        while child is not None:
             children.append(nodeToJSON(child.data))
             child = child.next
         content['children'] = children

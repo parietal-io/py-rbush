@@ -1,0 +1,12 @@
+	         0 
+Function:               insert 	  0.141726 no
+Function:               remove 	  0.157577 no
+Function:                 sort 	   2.49271 no
+Function:                  get 	  0.993693 no
+Function:           createNode 	  0.209457 no
+Function:               splice 	   4.11542 no
+Function:                index 	   9.28412 no
+Function:             findItem 	  0.461234 no
+Function:               extend 	  0.198361 no
+Function:        chooseSubtree 	  0.070269 no
+Function:   adjustParentBBoxes 
