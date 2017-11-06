@@ -394,11 +394,12 @@ class TestRbush(unittest.TestCase):
         tree = Rbush(4)
         tree.load(data);
 
-        # js = tree.toJSON()
+        js = tree.toJSON()
+        print(js)
 
         for i in range(0, len(data)):
             tree.remove(data[i]);
-
+        print(tree.toJSON())
         # t.assertEqual(tree.toJSON(), js);
         t.assertEqual(tree.toDict(), Rbush(4).toDict());
 

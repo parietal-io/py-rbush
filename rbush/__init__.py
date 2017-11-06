@@ -1,3 +1,4 @@
+#@profile
 import math
 from collections import namedtuple
 
@@ -57,7 +58,7 @@ stack_type.define(Stack.class_type.instance_type)
 def push(stack, data):
     return Stack(data, stack)
 
-@profile
+#@profile
 def insert(stack,index,item):
     assert isinstance(stack,Stack)
     child = stack
@@ -74,7 +75,7 @@ def insert(stack,index,item):
     cursor.next = new
     return stack
 
-@profile
+#@profile
 # @njit
 def remove(stack,index):
     child = stack
@@ -122,7 +123,7 @@ def length(stack):
 def default_compare(a):
     return a.min
 
-@profile
+#@profile
 #@njit   # Numba complains about 'compare': a class method, non-recognised
 def sort(stack,compare=None):
         child = stack
@@ -149,7 +150,7 @@ def sort(stack,compare=None):
             child = tmp
         return out
 
-@profile
+#@profile
 @njit
 def get(stack,index):
 #    assert isinstance(stack,Stack)
@@ -163,7 +164,7 @@ def get(stack,index):
     # assert child is not None, "Error: index {:d} out of range".format(index)
     return child.data
 
-@profile
+#@profile
 @njit
 def index(stack,item):
     child = stack
@@ -257,7 +258,7 @@ RBushItem = RBushNode
 RBushBox = RBushNode
 
 
-@profile
+#@profile
 def createNode(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
                     leaf=True, height=1, children=None):
     '''
@@ -332,7 +333,7 @@ def nodeFromDict(item):
                       children=item.children)
 
 
-@profile
+#@profile
 def splice(list_, insert_position, remove_how_many, *items_to_insert):
     removed_items = []
     for i in range(remove_how_many):
@@ -344,7 +345,7 @@ def splice(list_, insert_position, remove_how_many, *items_to_insert):
     return removed_items,list_
 
 
-@profile
+#@profile
 def findItem(item, items, equalsFn=None):
     item = itemFromDict(item)
     if not equalsFn:
@@ -356,7 +357,7 @@ def findItem(item, items, equalsFn=None):
 
 
 # TODO: EASY JIT
-@profile
+#@profile
 def extend(a, b):
     """Return 'a' box enlarged by 'b'"""
     a.xmin = min(a.xmin, b.xmin)
@@ -419,7 +420,7 @@ def multiSelect(items, left, right, n, compare):
         stack.extend([left, mid, mid, right])
 
 
-@profile
+#@profile
 def chooseSubtree(bbox, node, level, path):
     '''
     Return the node closer to 'bbox'
@@ -462,7 +463,7 @@ def chooseSubtree(bbox, node, level, path):
     return node
 
 
-@profile
+#@profile
 def adjustParentBBoxes(bbox, path, level):
     # adjust bboxes along the given tree path
     for i in range(level, -1, -1):
@@ -742,14 +743,17 @@ class Rbush(object):
 
         nodesToSearch = []
         while node:
-            len_ = len(node.children)
-            for i in range(0, len_):
-                child = node.children[i]
-                childBBox = self.toBBox(child) if node.leaf else child
+            child = node.children
+            while child is not None:
+            # len_ = length(node.children)
+            # for i in range(0, len_):
+            #     child = node.children[i]
+                childBBox = self.toBBox(child.data) if node.leaf else child.data
                 if intersects(bbox, childBBox):
                     if node.leaf or contains(bbox, childBBox):
                         return True
-                    nodesToSearch.append(child)
+                    nodesToSearch.append(child.data)
+                child = child.next
             node = nodesToSearch.pop() if len(nodesToSearch) else None
 
         return False
@@ -929,7 +933,8 @@ class Rbush(object):
             if length(path[i].children) == 0:
                 if (i > 0):
                     siblings = path[i - 1].children
-                    rem,siblings = splice(siblings, siblings.index(path[i]), 1)
+                    ind = index(siblings,path[i])
+                    rem,siblings = splice(siblings, ind, 1)
                 else:
                     self.clear()
             else:
