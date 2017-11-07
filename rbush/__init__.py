@@ -78,6 +78,8 @@ def insert(stack,index,item):
 #@profile
 # @njit
 def remove(stack,index):
+    if index == 0:
+        return stack.next
     child = stack
     i = 0
     while child is not None:
@@ -86,28 +88,9 @@ def remove(stack,index):
         i = i+1
         prev = child
         child = child.next
-    if index == 0:
-        stack = stack.next
-    else:
-        prev.next = child.next
+    prev.next = child.next
     # ? del child ?
     return stack
-    #
-    ### the block above works fine out from Numba,
-    ###  it complains on returning 'child.next'
-    # Here I will rebuild the stack, let's see if it works...
-    # out = None
-    # item = stack
-    # i=-1
-    # while item is not None:
-    #     i+=1
-    #     if i==index:
-    #         item = item.next
-    #         continue
-    #     out = push(out,item)
-    #     item = item.next
-    # return out
-
 
 @njit
 def make_stack(data):
@@ -121,34 +104,42 @@ def length(stack):
     return i
 
 def default_compare(a):
-    return a.min
+    return a.xmin
 
 #@profile
 #@njit   # Numba complains about 'compare': a class method, non-recognised
 def sort(stack,compare=None):
-        child = stack
-        compare = compare or default_compare
-        min_ = INF
-        out = None
-        while True:
-            cnt = 0
-            tmp = None
-            while child is not None:
-                if child.next is None:
-                    tmp = push(tmp,child.data)
-                    break
-                next_ = child.next
-                if compare(child.data) - compare(next_.data) <= 0:
-                    tmp = push(tmp,child.data)
-                else:
-                    cnt += 1
-                    tmp = push(tmp,next_.data)
-                child = next_
-            if not cnt:
-                out = tmp
-                break
-            child = tmp
-        return out
+    compare = compare or default_compare
+    len_ = length(stack)
+    if len_==1:
+        return stack
+    halfsize = int(len_/2)
+    odd = int(len_%2)
+    _,right = splice(stack,0,halfsize)
+    _,left = splice(stack,halfsize,halfsize+odd)
+    left = sort(left)
+    right = sort(right)
+    out = None
+    i = 0
+    j = 0
+    while i<length(left) and j<length(right):
+        iv = get(left,i)
+        jv = get(right,j)
+        if compare(iv) <= compare(jv):
+            out = push(out,iv)
+            i+=1
+        else:
+            out = push(out,jv)
+            j+=1
+    while i < length(left):
+        iv = get(left,i)
+        out = push(out,iv)
+        i+=1
+    while j < length(right):
+        jv = get(right,j)
+        out = push(out,jv)
+        j+=1
+    return out
 
 #@profile
 @njit
@@ -165,7 +156,7 @@ def get(stack,index):
     return child.data
 
 #@profile
-@njit
+# @njit
 def index(stack,item):
     child = stack
     i = 0
@@ -380,13 +371,13 @@ def bboxArea(a):
 def bboxMargin(a):
     return (a.xmax - a.xmin) + (a.ymax - a.ymin)
 
-
+@njit
 def enlargedArea(a, b):
     sect1 = max(b.xmax, a.xmax) - min(b.xmin, a.xmin)
     sect2 = max(b.ymax, a.ymax) - min(b.ymin, a.ymin)
     return sect1 * sect2
 
-
+@njit
 def intersectionArea(a, b):
     xmin = max(a.xmin, b.xmin)
     ymin = max(a.ymin, b.ymin)
@@ -395,12 +386,14 @@ def intersectionArea(a, b):
     return max(0, xmax - xmin) * max(0, ymax - ymin)
 
 
+@njit
 def contains(a, b):
     a_lower_b = a.xmin <= b.xmin and a.ymin <= b.ymin
     a_upper_b = b.xmax <= a.xmax and b.ymax <= a.ymax
     return a_lower_b and a_upper_b
 
 
+@njit
 def intersects(a, b):
     b_lower_a = b.xmin <= a.xmax and b.ymin <= a.ymax
     b_upper_a = b.xmax >= a.xmin and b.ymax >= a.ymin
@@ -470,7 +463,7 @@ def adjustParentBBoxes(bbox, path, level):
         extend(path[i], bbox)
 
 
-class Rbush(object):
+class RBush(object):
 
     _defaultMaxEntries = 9
 
@@ -494,6 +487,22 @@ class Rbush(object):
         new.fromJSON(self.toJSON())
         assert new == self
         return new
+
+    @property
+    def xmin(self):
+        return self.data.xmin
+    @property
+    def ymin(self):
+        return self.data.ymin
+    @property
+    def xmax(self):
+        return self.data.xmax
+    @property
+    def ymax(self):
+        return self.data.ymax
+    @property
+    def height(self):
+        return self.data.height
 
     def insert(self, item=None, xmin=None, ymin=None, xmax=None, ymax=None):
         '''Insert an item'''
@@ -565,7 +574,6 @@ class Rbush(object):
         splitIndex = self.chooseSplitIndex(node, m)
         # If an optimal index was not found, split at the minEntries
         splitIndex = splitIndex or m
-
         numChildren = length(node.children) - splitIndex
         adopted,node.children = splice(node.children, splitIndex, numChildren)
         newNode = createNode(height=node.height,
@@ -698,7 +706,7 @@ class Rbush(object):
                 nodesToSearch.extend(l)
             node = nodesToSearch.pop() if len(nodesToSearch) else None
         return result
-
+#@njit
     def search(self, bbox):
         node = self.data
         result = []
@@ -758,6 +766,7 @@ class Rbush(object):
 
         return False
 
+#@njit
     def load(self, data):
         # If data is empty or None, do nothing
         if not (data and len(data)):
@@ -810,7 +819,7 @@ class Rbush(object):
         # depth-first iterative tree traversal
         while node or len(path):
 
-            if not node:  # go up
+            if node is None:  # go up
                 node = path.pop()
                 parent = path[len(path) - 1] if len(path) else None
                 i = indexes.pop() if len(indexes) else None
@@ -854,15 +863,21 @@ class Rbush(object):
 
     def calcBBox(self, node):
         """Update node sizes after its children"""
-        return self.distBBox(node, 0, length(node.children), node)
+        auxNode = self.distBBox(node, 0, length(node.children))#, node)
+        node.xmin = auxNode.xmin
+        node.ymin = auxNode.ymin
+        node.xmax = auxNode.xmax
+        node.ymax = auxNode.ymax
+        return node
 
     def distBBox(self, node, left_child, right_child, destNode=None):
         """Return a node enlarged by all children between left/right"""
         destNode = createNode() if destNode is None else destNode
         for i in range(left_child, right_child):
             child = get(node.children,i)
-            if not child:
-                continue
+            assert child
+            # if not child:
+            #     continue
             extend(destNode, self.toBBox(child) if node.leaf else child)
         return destNode
 
@@ -873,11 +888,11 @@ class Rbush(object):
         return compareNodeymin(a)
 
     def toDict(self):
-        return nodeToJSON(self.data)
+        return nodeToDict(self.data)
 
-    def toJSON(self):
+    def toJSON(self,indent=None):
         import json
-        return json.dumps(self.toDict())
+        return json.dumps(self.toDict(),indent=indent)
 
     def fromDict(self, dict):
         return nodeFromJSON(dict)
@@ -931,10 +946,11 @@ class Rbush(object):
         siblings = None
         for i in range(len(path)-1, -1, -1):
             if length(path[i].children) == 0:
-                if (i > 0):
+                if i > 0:
                     siblings = path[i - 1].children
                     ind = index(siblings,path[i])
                     rem,siblings = splice(siblings, ind, 1)
+                    path[i - 1].children = siblings
                 else:
                     self.clear()
             else:
@@ -955,7 +971,8 @@ class Rbush(object):
 
 
 
-def nodeToJSON(node):
+#@njit
+def nodeToDict(node):
     # content = { k:str(v) for k,v in vars(node).items() }
     content = dict( xmin=node.xmin,
                     ymin=node.ymin,
@@ -967,13 +984,19 @@ def nodeToJSON(node):
         children = []
         child = node.children
         while child is not None:
-            children.append(nodeToJSON(child.data))
+            children.append(nodeToDict(child.data))
             child = child.next
         content['children'] = children
     else:
         content['data'] = node.data
     return content
 
+def nodeToJSON(node,indent=None):
+    cont = nodeToDict(node)
+    import json
+    return json.dumps(cont,indent=indent)
+
+#@njit
 def nodeFromJSON(dict_):
     # content = { k:str(v) for k,v in vars(node).items() }
     try:
@@ -994,3 +1017,5 @@ def nodeFromJSON(dict_):
                           dict_['ymax'],
                           dict_.get('data', None))
     return node
+
+Rbush = RBush

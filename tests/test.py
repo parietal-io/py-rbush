@@ -3,7 +3,8 @@ Infinity = sys.maxsize
 
 import unittest
 
-from rbush import Rbush
+from rbush import RBush
+Rbush = RBush
 
 # def defaultCompare(a, b):
 #     return (a.xmin - b.xmin) or (a.ymin - b.ymin) or (a.xmax - b.xmax) or (a.ymax - b.ymax);
@@ -59,6 +60,26 @@ def sortedEqual(t, a, b, compare=None):
     t.assertEqual(a[:].sort(key=compare), b[:].sort(key=compare));
 
 class TestRbush(unittest.TestCase):
+
+    def test_insert_remove_item(t):
+        item = dict(xmin=0,ymin=10,xmax=20,ymax=30)
+        tree = RBush()
+        tree.insert(item)
+        t.assertTrue(all([ tree.xmin == item['xmin'],
+                           tree.ymin == item['ymin'],
+                           tree.xmax == item['xmax'],
+                           tree.ymax == item['ymax'] ]))
+        tree.remove(item)
+        t.assertEqual(tree, RBush())
+
+    def test_root_split(t):
+        maxEntries = 9
+        items = someData(9+1)
+        tree = RBush(maxEntries)
+        for i,item in enumerate(items):
+            tree.insert(item)
+        t.assertTrue(tree.height == 2)
+
 
     # t('constructor accepts a format argument to customize the data format',
     # def test_format_argument(t):
@@ -394,12 +415,10 @@ class TestRbush(unittest.TestCase):
         tree = Rbush(4)
         tree.load(data);
 
-        js = tree.toJSON()
-        print(js)
+        # js = tree.toJSON()
 
         for i in range(0, len(data)):
             tree.remove(data[i]);
-        print(tree.toJSON())
         # t.assertEqual(tree.toJSON(), js);
         t.assertEqual(tree.toDict(), Rbush(4).toDict());
 
