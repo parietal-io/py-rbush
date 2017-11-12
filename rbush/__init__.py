@@ -1,12 +1,26 @@
 import math
-from collections import namedtuple
+import sys
 
+from collections import namedtuple
 from .quickselect import quickselect
 
-import sys
+__version__ = '0.0.1'
+
 INF = sys.maxsize
 # import numpy
 # INF = numpy.inf
+
+def test():
+    """Run the rbush test suite."""
+    import os
+    try:
+        import pytest
+    except ImportError:
+        import sys
+        sys.stderr.write("You need to install py.test to run tests.\n\n")
+        raise
+    pytest.main(os.path.dirname(__file__))
+
 
 class RBushItemClass(object):
 
