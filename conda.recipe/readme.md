@@ -24,7 +24,7 @@ CONDA_DIR=~/anaconda/
 # Platform code. For me it's `osx-64`
 PLATFORM=osx-64
 
-# Version number of datashader being released (e.g. 0.2.0)
+# Version number of rbush being released (e.g. 0.2.0)
 VERSION=0.2.0
 ```
 
