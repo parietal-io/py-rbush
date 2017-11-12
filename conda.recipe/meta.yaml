@@ -1,0 +1,25 @@
+package:
+  name: rbush
+  version: 0.0.1
+
+requirements:
+  build:
+    - python
+    - setuptools
+
+  run:
+    - python
+    - numba >=0.3.0
+    - odo >=0.4.1
+    - numpy >=1.7
+    - pandas >=0.15.0
+
+test:
+  requires:
+    - pytest >=2.8.5
+  imports:
+    - rbush
+
+about:
+  home: https://github.com/parietal-io/py-rbush
+  license: New BSD
