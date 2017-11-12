@@ -1,3 +1,6 @@
+This library is extremely alpha.  DO NOT USE for anything besides test / dev.
+-------
+
 # py-rbush
 Python port of JS rbush library
 
