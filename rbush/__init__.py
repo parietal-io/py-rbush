@@ -1,19 +1,16 @@
-#@profile
 import math
 from collections import namedtuple
 
 from .quickselect import quickselect
 
-# import sys
-# INF = sys.maxsize
 import numpy
 INF = numpy.inf
 
 
-from numba import njit
+from numba import njit,jit
 from numba import jitclass
 from numba import deferred_type, optional
-from numba import float64,int16,int32,char,boolean
+from numba import float64,int16,int32,char,boolean,int64
 
 stack_type = deferred_type()
 
@@ -59,8 +56,9 @@ def push(stack, data):
     return Stack(data, stack)
 
 #@profile
+@njit
 def insert(stack,index,item):
-    assert isinstance(stack,Stack)
+    # assert isinstance(stack,Stack)
     child = stack
     cursor = None
     i = 0
@@ -70,14 +68,16 @@ def insert(stack,index,item):
         i = i+1
         cursor = child
         child = child.next
-    assert child is not None, "Error: index {:d} out of range".format(index)
+    # assert child is not None, "Error: index {:d} out of range".format(index)
     new = push(child,item)
     cursor.next = new
     return stack
 
 #@profile
-# @njit
+# @jit
 def remove(stack,index):
+    if index >= length(stack):
+        return stack
     if index == 0:
         return stack.next
     child = stack
@@ -92,13 +92,14 @@ def remove(stack,index):
     # ? del child ?
     return stack
 
-@njit
-def make_stack(data):
-    return push(None, data)
+# @njit
+# def make_stack(data):
+#     return push(None, data)
 
+@jit
 def length(stack):
     i = 0
-    while stack:
+    while stack is not None:
         stack = stack.next
         i+=1
     return i
@@ -107,7 +108,7 @@ def default_compare(a):
     return a.xmin
 
 #@profile
-#@njit   # Numba complains about 'compare': a class method, non-recognised
+# @jit
 def sort(stack,compare=None):
     compare = compare or default_compare
     len_ = length(stack)
@@ -156,7 +157,7 @@ def get(stack,index):
     return child.data
 
 #@profile
-# @njit
+@njit
 def index(stack,item):
     child = stack
     i = 0
@@ -170,86 +171,12 @@ def index(stack,item):
     return None
 
 
-class Children(object):
-    def __init__(self,stack):
-        self.stack = stack
-
-    def __len__(self):
-        return length(self.stack)
-
-    def __iter__(self):
-        child = self.stack
-        while child is not None:
-            yield child
-            child = child.next
-        yield child
-
-    def sort(self,key):
-        return Children(sort(self.stack,key))
-
-
-# from numba.types.containers import List
-# from numba import void
-
-
-# spec = [
-#     ('xmin',float64),
-#     ('ymin',float64),
-#     ('xmax',float64),
-#     ('ymax',float64),
-#     ('data',int32),
-# ]
-# @jitclass(spec)
-# class RBushItem(object):
-#
-#     def __init__(self, xmin, ymin, xmax, ymax, data):
-#         self.xmin = xmin
-#         self.ymin = ymin
-#         self.xmax = xmax
-#         self.ymax = ymax
-#         self.data = data
-#
-#     # def __eq__(self, other):
-#     #     return self.xmin == other.xmin \
-#     #         and self.ymin == other.ymin \
-#     #         and self.xmax == other.xmax \
-#     #         and self.ymax == other.ymax
-#
-# item_type = deferred_type()
-# item_type.define(RBushItem.class_type.instance_type)
-#
-# # RBushItemTuple = namedtuple('RBushItemTuple', ['xmin', 'ymin', 'xmax',
-# #                                                'ymax', 'data'])
-#
-#
-# spec = [
-#     ('xmin',float64),
-#     ('ymin',float64),
-#     ('xmax',float64),
-#     ('ymax',float64),
-# ]
-# @jitclass(spec)
-# class RBushBox(object):
-#
-#     def __init__(self, xmin, ymin, xmax, ymax):
-#         self.xmin = xmin
-#         self.ymin = ymin
-#         self.xmax = xmax
-#         self.ymax = ymax
-#
-# box_type = deferred_type()
-# box_type.define(RBushBox.class_type.instance_type)
-
-# RBushBoxTuple = namedtuple('RBushTuple', ['xmin', 'ymin', 'xmax', 'ymax'])
-
-
-
-
 RBushItem = RBushNode
 RBushBox = RBushNode
 
 
 #@profile
+# @jit
 def createNode(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
                     leaf=True, height=1, children=None):
     '''
@@ -266,6 +193,8 @@ def createNode(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
     return node
 
 
+#@profile
+# @njit
 def createItem(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF, data=None):
     '''
     Create an item
@@ -274,6 +203,8 @@ def createItem(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF, data=None):
     item.data = data
     return item
 
+#@profile
+# @njit
 def createBox(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF):
     '''
     Create an item
@@ -281,6 +212,8 @@ def createBox(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF):
     return RBushBox(xmin, ymin, xmax, ymax)
 
 
+#@profile
+# @jit
 def toBBoxNode(item):
     '''
     Simply return 'item'
@@ -290,6 +223,8 @@ def toBBoxNode(item):
     return createBox(item.xmin, item.ymin, item.xmax, item.ymax)
 
 
+#@profile
+# @jit
 def itemToDict(item):
     return dict(xmin=item.xmin,
                 ymin=item.ymin,
@@ -298,6 +233,8 @@ def itemToDict(item):
                 data=item.data)
 
 
+#@profile
+# @jit
 def itemFromDict(item):
     if not isinstance(item, dict):
         assert isinstance(item, RBushItem), print(type(item))
@@ -307,6 +244,8 @@ def itemFromDict(item):
                       data)
 
 
+#@profile
+# @jit
 def boxFromDict(item):
     if not isinstance(item, dict):
         assert isinstance(item, RBushBox), print(type(item))
@@ -314,6 +253,8 @@ def boxFromDict(item):
     return createBox(item['xmin'], item['ymin'], item['xmax'], item['ymax'])
 
 
+#@profile
+# @njit
 def nodeFromDict(item):
     if not isinstance(item, dict):
         assert isinstance(item, RBushNode), print(type(item))
@@ -325,6 +266,7 @@ def nodeFromDict(item):
 
 
 #@profile
+# @jit
 def splice(list_, insert_position, remove_how_many, *items_to_insert):
     removed_items = []
     for i in range(remove_how_many):
@@ -337,6 +279,7 @@ def splice(list_, insert_position, remove_how_many, *items_to_insert):
 
 
 #@profile
+@jit
 def findItem(item, items, equalsFn=None):
     item = itemFromDict(item)
     if not equalsFn:
@@ -349,6 +292,7 @@ def findItem(item, items, equalsFn=None):
 
 # TODO: EASY JIT
 #@profile
+@njit
 def extend(a, b):
     """Return 'a' box enlarged by 'b'"""
     a.xmin = min(a.xmin, b.xmin)
@@ -357,26 +301,34 @@ def extend(a, b):
     a.ymax = max(a.ymax, b.ymax)
     return a
 
+
+#@profile
 def compareNodexmin(a):
     return a.xmin  # - b.xmin
 
-
+#@profile
 def compareNodeymin(a):
     return a.ymin  # - b.ymin
 
 
+#@profile
+@njit
 def bboxArea(a):
     return (a.xmax - a.xmin) * (a.ymax - a.ymin)
 
+#@profile
+@njit
 def bboxMargin(a):
     return (a.xmax - a.xmin) + (a.ymax - a.ymin)
 
+#@profile
 @njit
 def enlargedArea(a, b):
     sect1 = max(b.xmax, a.xmax) - min(b.xmin, a.xmin)
     sect2 = max(b.ymax, a.ymax) - min(b.ymin, a.ymin)
     return sect1 * sect2
 
+#@profile
 @njit
 def intersectionArea(a, b):
     xmin = max(a.xmin, b.xmin)
@@ -386,6 +338,7 @@ def intersectionArea(a, b):
     return max(0, xmax - xmin) * max(0, ymax - ymin)
 
 
+#@profile
 @njit
 def contains(a, b):
     a_lower_b = a.xmin <= b.xmin and a.ymin <= b.ymin
@@ -393,6 +346,7 @@ def contains(a, b):
     return a_lower_b and a_upper_b
 
 
+#@profile
 @njit
 def intersects(a, b):
     b_lower_a = b.xmin <= a.xmax and b.ymin <= a.ymax
@@ -400,6 +354,8 @@ def intersects(a, b):
     return b_lower_a and b_upper_a
 
 
+#@profile
+@jit
 def multiSelect(items, left, right, n, compare):
     stack = [left, right]
     mid = None
@@ -414,6 +370,7 @@ def multiSelect(items, left, right, n, compare):
 
 
 #@profile
+# @jit
 def chooseSubtree(bbox, node, level, path):
     '''
     Return the node closer to 'bbox'
@@ -457,11 +414,63 @@ def chooseSubtree(bbox, node, level, path):
 
 
 #@profile
+# @njit
 def adjustParentBBoxes(bbox, path, level):
     # adjust bboxes along the given tree path
     for i in range(level, -1, -1):
         extend(path[i], bbox)
 
+
+#@profile
+# @jit
+def nodeToDict(node):
+    # content = { k:str(v) for k,v in vars(node).items() }
+    content = dict( xmin=node.xmin,
+                    ymin=node.ymin,
+                    xmax=node.xmax,
+                    ymax=node.ymax )
+    if node.children is not None:
+        content['leaf'] = node.leaf
+        content['height'] = node.height
+        children = []
+        child = node.children
+        while child is not None:
+            children.append(nodeToDict(child.data))
+            child = child.next
+        content['children'] = children
+    else:
+        content['data'] = node.data
+    return content
+
+#@profile
+# @jit
+def nodeToJSON(node,indent=None):
+    cont = nodeToDict(node)
+    import json
+    return json.dumps(cont,indent=indent)
+
+#@profile
+# @jit
+def nodeFromJSON(dict_):
+    # content = { k:str(v) for k,v in vars(node).items() }
+    try:
+        children = []
+        for child in dict_['children']:
+            children.append(nodeFromJSON(child))
+        node = createNode(dict_['xmin'],
+                          dict_['ymin'],
+                          dict_['xmax'],
+                          dict_['ymax'],
+                          dict_['leaf'],
+                          dict_['height'],
+                          children)
+    except Exception as e:
+        node = createItem(dict_['xmin'],
+                          dict_['ymin'],
+                          dict_['xmax'],
+                          dict_['ymax'],
+                          dict_.get('data', None))
+    return node
 
 class RBush(object):
 
@@ -706,6 +715,7 @@ class RBush(object):
                 nodesToSearch.extend(l)
             node = nodesToSearch.pop() if len(nodesToSearch) else None
         return result
+
 #@njit
     def search(self, bbox):
         node = self.data
@@ -969,53 +979,5 @@ class RBush(object):
                                          a[format_[2]], a[format_[3]])
 
 
-
-
-#@njit
-def nodeToDict(node):
-    # content = { k:str(v) for k,v in vars(node).items() }
-    content = dict( xmin=node.xmin,
-                    ymin=node.ymin,
-                    xmax=node.xmax,
-                    ymax=node.ymax )
-    if node.children is not None:
-        content['leaf'] = node.leaf
-        content['height'] = node.height
-        children = []
-        child = node.children
-        while child is not None:
-            children.append(nodeToDict(child.data))
-            child = child.next
-        content['children'] = children
-    else:
-        content['data'] = node.data
-    return content
-
-def nodeToJSON(node,indent=None):
-    cont = nodeToDict(node)
-    import json
-    return json.dumps(cont,indent=indent)
-
-#@njit
-def nodeFromJSON(dict_):
-    # content = { k:str(v) for k,v in vars(node).items() }
-    try:
-        children = []
-        for child in dict_['children']:
-            children.append(nodeFromJSON(child))
-        node = createNode(dict_['xmin'],
-                          dict_['ymin'],
-                          dict_['xmax'],
-                          dict_['ymax'],
-                          dict_['leaf'],
-                          dict_['height'],
-                          children)
-    except Exception as e:
-        node = createItem(dict_['xmin'],
-                          dict_['ymin'],
-                          dict_['xmax'],
-                          dict_['ymax'],
-                          dict_.get('data', None))
-    return node
 
 Rbush = RBush
