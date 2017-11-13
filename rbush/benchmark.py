@@ -108,5 +108,5 @@ if __name__ == '__main__':
     except:
         usage()
         sys.exit(0)
-        
+
     run(N_insert,N_remove)
