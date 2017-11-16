@@ -6,20 +6,19 @@ import unittest
 from rbush import RBush
 Rbush = RBush
 
-# def default_compare(a, b):
-#     return (a.xmin - b.xmin) or (a.ymin - b.ymin) or (a.xmax - b.xmax) or (a.ymax - b.ymax)
+
 def default_compare(a):
     return a['xmin'] + a['ymin'] + a['xmax'] + a['ymax']
 
 
-def someData(n):
+def some_data(n):
     data = []
     for i in range(0, n):
         data.append({'xmin': i, 'ymin': i, 'xmax': i, 'ymax': i})
     return data
 
 
-def arrToBBox(arr):
+def arr_to_bbox(arr):
     return dict(
                 xmin = arr[0],
                 ymin = arr[1],
@@ -29,7 +28,7 @@ def arrToBBox(arr):
                 )
 
 
-data = list( map( arrToBBox,
+data = list( map( arr_to_bbox,
     [[0,0,0,0],   [10,10,10,10],[20,20,20,20],[25,0,25,0],
     [35,10,35,10],[45,20,45,20],[0,25,0,25],  [10,35,10,35],
     [20,45,20,45],[25,25,25,25],[35,35,35,35],[45,45,45,45],
@@ -44,7 +43,7 @@ data = list( map( arrToBBox,
     [70,95,70,95],[75,75,75,75],[85,85,85,85],[95,95,95,95]]
     ))
 
-emptyData = list( map( arrToBBox,
+empty_data = list( map( arr_to_bbox,
     [[-Infinity, -Infinity, Infinity, Infinity],
     [-Infinity, -Infinity, Infinity, Infinity],
     [-Infinity, -Infinity, Infinity, Infinity],
@@ -72,7 +71,7 @@ def test_insert_remove_item():
 
 def test_root_split():
     maxEntries = 9
-    items = someData(9+1)
+    items = some_data(9+1)
     tree = RBush(maxEntries)
     for i,item in enumerate(items):
         tree.insert(item)
@@ -90,11 +89,11 @@ def test_root_split():
 # t('constructor uses 9 max entries by default',
 def test_default_maxEntries():
     tree = Rbush()
-    tree.load(someData(9))
+    tree.load(some_data(9))
     assert tree.toDict()['height'] == 1
 
     tree2 = Rbush()
-    tree2.load(someData(10))
+    tree2.load(some_data(10))
     assert tree2.toDict()['height'] == 2
 
 
@@ -182,21 +181,21 @@ def test_data_load_empty():
 # t('#load handles the insertion of maxEntries + 2 empty bboxes',
 def test_data_load_empty_maxEntries():
     tree = Rbush(4)
-    tree.load(emptyData)
+    tree.load(empty_data)
 
     assert tree.toDict()['height'] == 2
-    assert sorted_equal(tree.all(), emptyData)
+    assert sorted_equal(tree.all(), empty_data)
 
 
 # t('#insert handles the insertion of maxEntries + 2 empty bboxes',
 def test_data_insert_empty_maxEntries():
     tree = Rbush(4)
 
-    for datum in emptyData:
+    for datum in empty_data:
         tree.insert(datum)
 
     assert tree.toDict()['height'] == 2
-    assert sorted_equal(tree.all(), emptyData)
+    assert sorted_equal(tree.all(), empty_data)
 
 
 # t('#load properly splits tree root when merging trees of the same height',
@@ -212,7 +211,7 @@ def test_split_root_on_merge():
 
 # t('#load properly merges data of smaller or bigger tree heights', function ():
 def test_merge_trees():
-    smaller = someData(10)
+    smaller = some_data(10)
     tree1 = Rbush(4)
     tree1.load(data)
     tree1.load(smaller)
@@ -233,7 +232,7 @@ def test_find_matching_bbox():
     tree.load(data)
     result = tree.search({'xmin': 40, 'ymin': 20, 'xmax': 80, 'ymax': 70})
 
-    assert sorted_equal(result, list(map(arrToBBox,
+    assert sorted_equal(result, list(map(arr_to_bbox,
     [
         [70,20,70,20],[75,25,75,25],[45,45,45,45],
         [50,50,50,50],[60,60,60,60],[70,70,70,70],
@@ -256,7 +255,7 @@ def test_find_empty_result():
     tree = Rbush(4)
     tree.load(data)
     # result = tree.search([200, 200, 210, 210])
-    result = tree.search(arrToBBox([200, 200, 210, 210]))
+    result = tree.search(arr_to_bbox([200, 200, 210, 210]))
     assert result == []
 
 
@@ -265,7 +264,7 @@ def test_find_no_collision():
     tree = Rbush(4)
     tree.load(data)
     # result = tree.collides([200, 200, 210, 210])
-    result = tree.collides(arrToBBox([200, 200, 210, 210]))
+    result = tree.collides(arr_to_bbox([200, 200, 210, 210]))
 
     assert not result
 
@@ -295,7 +294,7 @@ def test_json_io():
 
 #t('#insert adds an item to an existing tree correctly',
 def test_insert_item():
-    items = list( map( arrToBBox,
+    items = list( map( arr_to_bbox,
         [[0, 0, 0, 0],
          [1, 1, 1, 1],
          [2, 2, 2, 2],
@@ -378,7 +377,7 @@ def test_remove_nothing():
     tree.load(data)
     tree2 = Rbush()
     tree2.load(data)
-    tree2.remove(arrToBBox([13, 13, 13, 13]))
+    tree2.remove(arr_to_bbox([13, 13, 13, 13]))
     assert tree == tree2
 
 
