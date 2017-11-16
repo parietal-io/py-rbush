@@ -9,7 +9,7 @@ Python port of JS rbush library
 To run the (unit) tests, type:
 
 ```python
->>> python -m unittest rbush.tests.test
+>>> pytest rbush
 ```
 
 
