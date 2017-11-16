@@ -115,7 +115,7 @@ def default_compare(a):
 
 
 # @profile
-# @jit
+@jit
 def sort(stack, compare=None):
     compare = compare or default_compare
     len_ = length(stack)
@@ -180,7 +180,7 @@ def index(stack, item):
 
 
 # @profile
-# @jit
+@jit
 def createNode(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
                leaf=True, height=1, children=None):
     '''
@@ -225,7 +225,7 @@ def toBBoxNode(item):
     '''
     if isinstance(item, dict):
         item = itemFromDict(item)
-    return createBox(item.xmin, item.ymin, item.xmax, item.ymax)
+    return RBushNode(item.xmin, item.ymin, item.xmax, item.ymax)
 
 
 # @profile
@@ -245,8 +245,8 @@ def itemFromDict(item):
         assert isinstance(item, RBushNode), print(type(item))
         return item
     data = item.get('data', None)
-    return createItem(item['xmin'], item['ymin'], item['xmax'], item['ymax'],
-                      data)
+    return createItem(item['xmin'], item['ymin'],
+                      item['xmax'], item['ymax'],data)
 
 
 # @profile
@@ -255,7 +255,7 @@ def boxFromDict(item):
     if not isinstance(item, dict):
         assert isinstance(item, RBushNode), print(type(item))
         return item
-    return createBox(item['xmin'], item['ymin'], item['xmax'], item['ymax'])
+    return RBushNode(item['xmin'], item['ymin'], item['xmax'], item['ymax'])
 
 
 # @profile
