@@ -179,10 +179,6 @@ def index(stack, item):
     return None
 
 
-RBushItem = RBushNode
-RBushBox = RBushNode
-
-
 # @profile
 # @jit
 def createNode(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
@@ -207,7 +203,7 @@ def createItem(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF, data=None):
     '''
     Create an item
     '''
-    item = RBushItem(xmin, ymin, xmax, ymax)
+    item = RBushNode(xmin, ymin, xmax, ymax)
     item.data = data
     return item
 
@@ -218,7 +214,7 @@ def createBox(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF):
     '''
     Create an item
     '''
-    return RBushBox(xmin, ymin, xmax, ymax)
+    return RBushNode(xmin, ymin, xmax, ymax)
 
 
 # @profile
@@ -246,7 +242,7 @@ def itemToDict(item):
 # @jit
 def itemFromDict(item):
     if not isinstance(item, dict):
-        assert isinstance(item, RBushItem), print(type(item))
+        assert isinstance(item, RBushNode), print(type(item))
         return item
     data = item.get('data', None)
     return createItem(item['xmin'], item['ymin'], item['xmax'], item['ymax'],
@@ -257,7 +253,7 @@ def itemFromDict(item):
 # @jit
 def boxFromDict(item):
     if not isinstance(item, dict):
-        assert isinstance(item, RBushBox), print(type(item))
+        assert isinstance(item, RBushNode), print(type(item))
         return item
     return createBox(item['xmin'], item['ymin'], item['xmax'], item['ymax'])
 
@@ -1002,5 +998,5 @@ class RBush(object):
         self.comparexmin = lambda a: a[format_[0]]
         self.compareymin = lambda a: a[format_[1]]
 
-        self.toBBox = lambda a: RBushBox(a[format_[0]], a[format_[1]],
-                                         a[format_[2]], a[format_[3]])
+        self.toBBox = lambda a: RBushNode(a[format_[0]], a[format_[1]],
+                                          a[format_[2]], a[format_[3]])
