@@ -341,7 +341,7 @@ def enlargedArea(a, b):
 def intersectionArea(a, b):
     xmin = max(a.xmin, b.xmin)
     ymin = max(a.ymin, b.ymin)
-    xmax = min(a.xmax, b.ymax)
+    xmax = min(a.xmax, b.xmax)
     ymax = min(a.ymax, b.ymax)
     return max(0, xmax - xmin) * max(0, ymax - ymin)
 
