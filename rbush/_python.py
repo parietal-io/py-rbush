@@ -12,6 +12,12 @@ def create_node(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
     return node
 
 
+def create_root(children=None):
+    if children is None:
+        children = list()
+    return create_node(leaf=True, height=1, children=children)
+
+
 class RBushNode(object):
     def __init__(self, xmin, ymin, xmax, ymax):
         self.xmin = xmin

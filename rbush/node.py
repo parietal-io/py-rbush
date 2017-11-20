@@ -1,28 +1,29 @@
 from .core import *
 
+
 import numba as nb
 
 
-@nb.njit
+# @nb.njit
 def max(x, y):
     if x > y:
         return x
     return y
 
 
-@nb.njit
+# @nb.njit
 def min(x, y):
     if x < y:
         return x
     return y
 
 
-@profile
+#@profile
 def calc_enlarged_area(a, b):
     return _calc_enlarged_area(a.xmin, a.ymin, a.xmax, a.ymax,
                                b.xmin, b.ymin, b.xmax, b.ymax)
 
-@nb.njit
+# @nb.njit
 def _calc_enlarged_area(axmin, aymin, axmax, aymax,
                         bxmin, bymin, bxmax, bymax):
     sectx = max(axmax, bxmax) - min(axmin, bxmin)
@@ -30,7 +31,7 @@ def _calc_enlarged_area(axmin, aymin, axmax, aymax,
     return sectx * secty
 
 
-@profile
+#@profile
 def extend(a, b):
     """
     Return 'a' box enlarged by 'b'
@@ -43,7 +44,7 @@ def extend(a, b):
     a.ymax = ymax
     return a
 
-@nb.njit
+# @nb.njit
 def _extend(axmin, aymin, axmax, aymax,
             bxmin, bymin, bxmax, bymax):
     xmin = min(axmin, bxmin)
@@ -57,13 +58,13 @@ def calc_bbox_margin(bbox):
     return (bbox.xmax - bbox.xmin) + (bbox.ymax - bbox.ymin)
 
 
-@profile
+#@profile
 def calc_dist_xmargin(node, minentries):
     sort_xmargin(node)
     return calc_dist_margin(node, minentries)
 
 
-@profile
+#@profile
 def calc_dist_ymargin(node, minentries):
     sort_ymargin(node)
     return calc_dist_margin(node, minentries)
@@ -79,7 +80,7 @@ def sort_ymargin(node):
     return node
 
 
-@profile
+#@profile
 def calc_dist_margin(node, minentries):
     M = len(node.children)
     m = minentries
@@ -121,7 +122,7 @@ def adjust_bbox(node):
     return node
 
 
-@profile
+#@profile
 def split(node, minentries):
     sort_splitaxis(node, minentries)
     index = choose_splitindex(node, minentries)
@@ -141,7 +142,7 @@ def split(node, minentries):
     return new_node
 
 
-@profile
+#@profile
 def sort_splitaxis(node, minentries):
     xmargin = calc_dist_xmargin(node, minentries)
     ymargin = calc_dist_ymargin(node, minentries)
@@ -150,7 +151,7 @@ def sort_splitaxis(node, minentries):
     return node
 
 
-@profile
+#@profile
 def choose_splitindex(node, minentries):
     '''
     Return the index (children) where to split
