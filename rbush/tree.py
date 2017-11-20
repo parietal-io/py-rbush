@@ -8,7 +8,8 @@ import math
 def insert(root, xmin, ymin, xmax, ymax,  # data,
            maxentries, minentries):
     if len(xmin) > 1:
-        return load(root, [xmin, ymin, xmax, ymax], maxentries, minentries)
+        arr = np.array([xmin, ymin, xmax, ymax]).T
+        return load(root, arr, maxentries, minentries)
     else:
         item = create_node(xmin[0], ymin[0], xmax[0], ymax[0])  # , data[0])
         return _insert_item(root, item, maxentries, minentries)
