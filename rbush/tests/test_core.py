@@ -16,13 +16,11 @@ def some_data(n):
 
 
 def arr_to_bbox(arr):
-    return dict(
-                xmin=arr[0],
+    return dict(xmin=arr[0],
                 ymin=arr[1],
                 xmax=arr[2],
                 ymax=arr[3],
-                data=None
-                )
+                data=None)
 
 
 arr = [[0, 0, 0, 0], [10, 10, 10, 10], [20, 20, 20, 20], [25, 0, 25, 0],
@@ -95,6 +93,12 @@ def test_default_maxEntries():
 
 
 def test_load():
+    tree = RBush(4)
+    tree.load(data)
+    assert sorted_equal(tree.all(), data)
+
+
+def test_load_numpy():
     tree = RBush(4)
     tree.load(data)
     assert sorted_equal(tree.all(), data)

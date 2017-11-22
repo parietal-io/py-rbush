@@ -1,26 +1,28 @@
 import time
-from random import random
-import math
 
-from rbush import RBush
-from rbush.data import generate_data
-
-N_INSERT = 10**4
+N_INSERT = 10**3
 N_REMOVE = 10**2
-maxEntries = 9
-
-
-def insertion(tree, data):
-    tic = time.time()
-    for item in data:
-        tree.insert(*item)
-    return time.time() - tic
+MAX_ENTRIES = 9
 
 
 def search(tree, data):
     tic = time.time()
     for item in data:
-        tree.search(*item)
+        tree.search(**item)
+    return time.time() - tic
+
+
+def insertion(tree, data):
+    tic = time.time()
+    for item in data:
+        tree.insert(**item)
+    return time.time() - tic
+
+
+def removal(tree, data):
+    tic = time.time()
+    for item in data:
+        tree.remove(item)
     return time.time() - tic
 
 
@@ -31,27 +33,23 @@ def load(tree, data):
 
 
 def run(N_insert=None, N_remove=None):
+    from rbush import RBush
+    from rbush.data import generate_data_items, generate_data_array
+
     N_insert = N_insert or N_INSERT
     N_remove = N_remove or N_REMOVE
-
     N_search = N_remove
 
-    data = generate_data(N_insert, 1)
-    bboxes100 = generate_data(N_search, 100 * math.sqrt(0.1))
-    bboxes10 = generate_data(N_search, 10)
-    bboxes1 = generate_data(N_search, 1)
+    data_items = generate_data_items(N_insert, 1)
+    data_array = generate_data_array(N_insert, 1)
+    bboxes100 = generate_data_items(N_search, 10)
+    bboxes10 = generate_data_items(N_search, 1)
+    bboxes1 = generate_data_items(N_search, 0.01)
 
-    data_2 = generate_data(N_insert, 1)
-    bboxes100_2 = generate_data(N_search, 100 * math.sqrt(0.1))
-    bboxes10_2 = generate_data(N_search, 10)
-    bboxes1_2 = generate_data(N_search, 1)
-
-    tree = RBush(maxEntries)
-
-    print('Individual insertions:')
+    tree = RBush(MAX_ENTRIES)
 
     # insertion
-    t_insertion = insertion(tree, data)
+    t_insertion = insertion(tree, data_items)
     print('{:d} insertions one-by-one: {:.5f}'.format(N_insert, t_insertion))
 
     # Search items 10%
@@ -66,33 +64,28 @@ def run(N_insert=None, N_remove=None):
     t_search1 = search(tree, bboxes1)
     print('{:d} searches in ~0.01%: {:.5f}'.format(N_search, t_search1))
 
-    # # removal
-    # def removal(tree,data):
-    #     tic = time.time()
-    #     for item in data:
-    #         tree.remove(item)
-    #     return time.time() - tic
-    # t_removal = removal(tree,data[:1000])
-    # print('{:d} removals: {:.5f}'.format(N_search,t_removal))
+    # removal
+    # t_removal = removal(tree, data[:1000])
+    # print('{:d} removals: {:.5f}'.format(N_search, t_removal))
 
     print('Bulk load:')
 
-    tree = RBush(maxEntries)
+    tree = RBush(MAX_ENTRIES)
 
     # Bulk load
-    t_bulk = load(tree, data_2)
+    t_bulk = load(tree, data_array)
     print('{:d} items bulk load: {:.5f}'.format(N_insert, t_bulk))
 
     # Search items 10%
-    t_search100 = search(tree, bboxes100_2)
+    t_search100 = search(tree, bboxes100)
     print('{:d} searches in ~10%: {:.5f}'.format(N_search, t_search100))
 
     # Search items 1%
-    t_search10 = search(tree, bboxes10_2)
+    t_search10 = search(tree, bboxes10)
     print('{:d} searches in ~1%: {:.5f}'.format(N_search, t_search10))
 
     # Search items 0.01%
-    t_search1 = search(tree, bboxes1_2)
+    t_search1 = search(tree, bboxes1)
     print('{:d} searches in ~0.01%: {:.5f}'.format(N_search, t_search1))
 
 
