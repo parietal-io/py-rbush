@@ -14,6 +14,18 @@ def create_node(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
     return node
 
 
+def list():
+    return List()
+
+
+def len(children):
+    return children.size()
+
+
+def get(children, index):
+    return children.get(index)
+
+
 node_type = nb.deferred_type()
 list_type = nb.deferred_type()
 stack_type = nb.deferred_type()
@@ -112,17 +124,6 @@ class List(object):
 
 list_type.define(List.class_type.instance_type)
 
-
-def list():
-    return List()
-
-
-def len(children):
-    return children.size()
-
-
-def get(children, index):
-    return children.get(index)
 
 ###################
 ### NOT WORKING ###

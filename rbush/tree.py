@@ -7,15 +7,21 @@ import math
 # @profile
 def insert(root, xmin, ymin, xmax, ymax,  # data,
            maxentries, minentries):
+    """
+    Insert vectors [xmin],[ymin],[xmax],[ymax]
+    """
     if len(xmin) > 1:
         arr = np.array([xmin, ymin, xmax, ymax]).T
         return load(root, arr, maxentries, minentries)
     else:
         item = create_node(xmin[0], ymin[0], xmax[0], ymax[0])  # , data[0])
-        return _insert_item(root, item, maxentries, minentries)
+        return insert_node(root, item, maxentries, minentries)
 
 
-def _insert_item(root, item, maxentries, minentries):
+def insert_node(root, item, maxentries, minentries):
+    """
+    Insert node 'item' somewhere in 'root' node (tree)
+    """
     if item.height is None:
         level = root.height - 1
     else:
@@ -30,81 +36,14 @@ def _insert_item(root, item, maxentries, minentries):
     assert get(path, 0) is root
 
     if len(node.children) > maxentries:
-        root = balance_tree(path, maxentries, minentries)
-    return root
-
-
-# @profile
-def search(node, xmin, ymin, xmax, ymax):
-    bbox = create_node(xmin, ymin, xmax, ymax)
-    return search_item(node, bbox)
-
-
-def search_item(node, bbox):
-    items = list()
-    if node is None:
-        return items
-    if not intersects(bbox, node):
-        return items
-    if contains(bbox, node):
-        items.extend(retrieve_all_items(node))
-        return items
-    if node.children is None:
-        items.append(node)
-    else:
-        n_items = len(node.children)
-        for i in range(n_items):
-            child = get(node.children, i)
-            items.extend(search_item(child, bbox))
-    return items
-
-
-def retrieve_all_items(node):
-    items = list()
-    if node.children is None:
-        items.append(node)
-        return items
-    n_items = len(node.children)
-    for i in range(n_items):
-        item = get(node.children, i)
-        if node.leaf:
-            items.append(item)
-        else:
-            items.extend(retrieve_all_items(item))
-    return items
-
-
-# @profile
-def balance_tree(path, maxentries, minentries):
-    root = get(path, 0)
-    for level in range(len(path)-1, -1, -1):
-        node = get(path, level)
-        if len(node.children) <= maxentries:
-            break
-        new_node = split(node, minentries)
-        if level > 0:
-            parent = get(path, level-1)
-            parent.children.append(new_node)
-            # NOTE: 'parent' has had your borders extended when we 'insert'
-        else:
-            children = list()
-            children.append(node)
-            children.append(new_node)
-            root = create_node(children=children,
-                               leaf=False,
-                               height=node.height+1)
-            adjust_bbox(root)
+        root = balance_nodes(path, maxentries, minentries)
     return root
 
 
 # @profile
 def choose_subtree(node, bbox, level, path):
     '''
-    Return the node and add to path the tree to insert new item
-
-    Traverse the subtree searching for the node tightest path,
-    the node at the end is where closest to 'bbox' is closer or
-
+    Return node closets to 'bbox', fill 'path' with nodes visited
     '''
     while True:
         path.append(node)
@@ -137,6 +76,69 @@ def choose_subtree(node, bbox, level, path):
         node = target_node or get(node.children, 0)
 
     return node
+
+
+# @profile
+def balance_nodes(path, maxentries, minentries):
+    root = get(path, 0)
+    for level in range(len(path)-1, -1, -1):
+        node = get(path, level)
+        if len(node.children) <= maxentries:
+            break
+        new_node = split(node, minentries)
+        if level > 0:
+            parent = get(path, level-1)
+            parent.children.append(new_node)
+            # NOTE: 'parent' has had your borders extended when we 'insert'
+        else:
+            children = list()
+            children.append(node)
+            children.append(new_node)
+            root = create_node(children=children,
+                               leaf=False,
+                               height=node.height+1)
+            adjust_bbox(root)
+    return root
+
+
+# @profile
+def search(node, xmin, ymin, xmax, ymax):
+    bbox = create_node(xmin, ymin, xmax, ymax)
+    return search_node(node, bbox)
+
+
+def search_node(node, bbox):
+    items = list()
+    if node is None:
+        return items
+    if not intersects(bbox, node):
+        return items
+    if contains(bbox, node):
+        items.extend(retrieve_all_items(node))
+        return items
+    if node.children is None:
+        items.append(node)
+    else:
+        n_items = len(node.children)
+        for i in range(n_items):
+            child = get(node.children, i)
+            items.extend(search_node(child, bbox))
+    return items
+
+
+def retrieve_all_items(node):
+    items = list()
+    if node.children is None:
+        items.append(node)
+        return items
+    n_items = len(node.children)
+    for i in range(n_items):
+        item = get(node.children, i)
+        if node.leaf:
+            items.append(item)
+        else:
+            items.extend(retrieve_all_items(item))
+    return items
 
 
 def load(root, data, maxentries, minentries):
@@ -182,7 +184,7 @@ def load(root, data, maxentries, minentries):
             node = tmpNode
         # insert the small tree into the large tree at appropriate level
         level = root.height - node.height - 1
-        root = _insert_item(root, node, level, True)
+        root = insert_node(root, node, level, True)
     return root
 
 

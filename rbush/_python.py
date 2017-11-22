@@ -12,10 +12,12 @@ def create_node(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
     return node
 
 
-def create_root(children=None):
-    if children is None:
-        children = list()
-    return create_node(leaf=True, height=1, children=children)
+def get(children, index):
+    try:
+        child = children[index]
+    except:
+        child = None
+    return child
 
 
 class RBushNode(object):
@@ -28,11 +30,3 @@ class RBushNode(object):
         self.leaf = None
         self.height = None
         self.children = None
-
-
-def get(children, index):
-    try:
-        child = children[index]
-    except:
-        child = None
-    return child
