@@ -5,22 +5,20 @@ import math
 
 
 # @profile
-def insert(root, xmin, ymin, xmax, ymax,  # data,
+def insert(root, xmin, ymin, xmax, ymax, data,
            maxentries, minentries):
     """
-    Insert vectors [xmin],[ymin],[xmax],[ymax]
+    Insert arrays [xmin],[ymin],[xmax],[ymax],[data]
     """
-    if len(xmin) > 1:
-        arr = np.array([xmin, ymin, xmax, ymax]).T
-        return load(root, arr, maxentries, minentries)
-    else:
-        item = create_node(xmin[0], ymin[0], xmax[0], ymax[0])  # , data[0])
-        return insert_node(root, item, maxentries, minentries)
+    for i in range(len(xmin)):
+        item = create_node(xmin[i], ymin[i], xmax[i], ymax[i], data[i])
+        root = insert_node(root, item, maxentries, minentries)
+    return root
 
 
 def insert_node(root, item, maxentries, minentries):
     """
-    Insert node 'item' somewhere in 'root' node (tree)
+    Insert node 'item' accordingly in 'root' node (tree)
     """
     if item.height is None:
         level = root.height - 1
@@ -153,12 +151,10 @@ def load(root, data, maxentries, minentries):
         return root
 
     # If data is small ( < minimum entries), just insert one-by-one
-    len_ = len(data)
-    if len_ < minentries:
-        for i in range(len_):
-            root = insert(root, *data[i],
-                          maxentries=maxentries, minentries=minentries)
-        return root
+    if len(data) < minentries:
+        xmin, ymin, xmax, ymax, data = data.T
+        return insert(root, xmin, ymin, xmax, ymax, data,
+                      maxentries=maxentries, minentries=minentries)
 
     # recursively build the tree with the given data
     # from scratch using OMT algorithm

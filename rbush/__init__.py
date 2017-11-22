@@ -45,13 +45,16 @@ class RBush(object):
             xmax = [xmax]
             ymax = [ymax]
 
-        if not len(xmin) == len(ymin) == len(xmax) == len(ymax):
-            msg = ("Error: Arguments 'xmin','ymin',"
-                   "'xmax','ymax' have different lengths")
-            print(msg)
-            return self
+        if data is None:
+            data = [None]*len(xmin)
 
-        root = insert(self._root, xmin, ymin, xmax, ymax,  # data,
+        if not len(xmin) == len(ymin) == len(xmax) == len(ymax) == len(data):
+            msg = ("Error: Arguments 'xmin','ymin','xmax','ymax','data'"
+                   "have different lengths")
+            print(msg)
+            return root
+
+        root = insert(self._root, xmin, ymin, xmax, ymax, data,
                       maxentries=self.maxentries, minentries=self.minentries)
         self._root = root
         return self
@@ -73,6 +76,16 @@ class RBush(object):
         Output:
          - self : RBush
         """
+        if data is not None and len(data) != len(arr):
+            msg = ("Error: Arguments 'arr','data' have different lengths")
+            print(msg)
+            return root
+
+        if data is None:
+            data = np.empty((len(arr), 1), dtype=int)
+
+        arr = np.hstack([arr, data])
+        
         root = load(self._root, arr,
                     maxentries=self.maxentries, minentries=self.minentries)
         self._root = root
