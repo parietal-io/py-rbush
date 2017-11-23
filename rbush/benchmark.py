@@ -22,7 +22,7 @@ def insertion(tree, data):
 def removal(tree, data):
     tic = time.time()
     for item in data:
-        tree.remove(item)
+        tree.remove(**item)
     return time.time() - tic
 
 
@@ -65,8 +65,8 @@ def run(N_insert=None, N_remove=None):
     print('{:d} searches in ~0.01%: {:.5f}'.format(N_search, t_search1))
 
     # removal
-    # t_removal = removal(tree, data[:1000])
-    # print('{:d} removals: {:.5f}'.format(N_search, t_removal))
+    t_removal = removal(tree, data_items[:1000])
+    print('{:d} removals: {:.5f}'.format(N_search, t_removal))
 
     print('Bulk load:')
 

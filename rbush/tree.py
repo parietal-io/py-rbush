@@ -3,6 +3,49 @@ from .node import *
 import math
 
 
+def remove(root, xmin, ymin, xmax, ymax):
+    bbox = create_node(xmin, ymin, xmax, ymax)
+    return remove_item(root, bbox, lambda a,b:a.xmin==b.xmin)
+
+
+def remove_item(node, bbox, is_equal):
+    items = []
+    if not intersects(bbox, node):
+        return items
+    if node.leaf:
+        indexes = []
+        for i in range(len(node.children)):
+            child = get(node.children, i)
+            if is_equal(bbox, child):
+                indexes.append(i)
+        for i in range(len(indexes)-1, -1, -1):
+            items.append(node.children.pop(i))
+        if len(items) > 0:
+            adjust_bbox(node)
+    else:
+        empty = None
+        indexes = []
+        for i in range(len(node.children)):
+            child = get(node.children, i)
+            items.extend(remove_item(child, bbox, is_equal))
+            if len(child.children) == 0:
+                indexes.append(i)
+        for i in range(len(indexes)-1, -1, -1):
+            empty = node.children.pop(i)
+        if empty is not None:
+            adjust_bbox(node)
+    return items
+
+
+def findItem(item, items, equalsFn=None):
+    item = itemFromDict(item)
+    if not equalsFn:
+        return index(items, item)
+    for i in range(0, length(items)):
+        if equalsFn(item, get(items, i)):
+            return i
+    return None
+
 # @profile
 def insert(root, xmin, ymin, xmax, ymax, data,
            maxentries, minentries):

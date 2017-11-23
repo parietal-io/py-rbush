@@ -121,3 +121,6 @@ class RBush(object):
         Return items contained by or intersecting with 'xmin,ymin,xmax,ymax'
         """
         return search(self._root, xmin, ymin, xmax, ymax)
+
+    def remove(self, xmin, ymin, xmax, ymax):
+        return remove(self._root, xmin, ymin, xmax, ymax)
