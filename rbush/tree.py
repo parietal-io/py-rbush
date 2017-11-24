@@ -1,5 +1,5 @@
 from .node import *
-
+from copy import copy
 import math
 
 
@@ -36,7 +36,7 @@ def remove_item(node, bbox, is_equal):
     return items
 
 
-# @profile
+#@profile
 def insert(root, xmin, ymin, xmax, ymax, data,
            maxentries, minentries):
     """
@@ -48,6 +48,7 @@ def insert(root, xmin, ymin, xmax, ymax, data,
     return root
 
 
+#@profile
 def insert_node(root, item, maxentries, minentries):
     """
     Insert node 'item' accordingly in 'root' node (tree)
@@ -173,6 +174,7 @@ def retrieve_all_items(node):
     return items
 
 
+#@profile
 def load(root, data, maxentries, minentries):
     """
     Bulk insertion of items from 'data'
@@ -218,6 +220,7 @@ def load(root, data, maxentries, minentries):
     return root
 
 
+#@profile
 def build_tree(data, first, last, maxentries, minentries, height=None):
     """
     Build RBush from 'data' items between 'first','last' (inclusive)
@@ -273,6 +276,7 @@ def compare_y(a, b):
     return a[1] - b[1]
 
 
+#@profile
 def multiselect(data, first, last, n, compare):
     stack = [first, last]
     mid = None
@@ -285,7 +289,9 @@ def multiselect(data, first, last, n, compare):
         quickselect(data, mid, first, last, compare)
         stack.extend([first, mid, mid, last])
 
-
+# from numba import njit
+#@profile
+# @njit
 def quickselect(data, k, first, last, compare):
     while (last > first):
         if last - first > 600:
@@ -329,8 +335,8 @@ def quickselect(data, k, first, last, compare):
 
 
 def swap(arr, i, j):
-    tmp = arr[i]
-    arr[i] = arr[j]
+    tmp = copy(arr[i])
+    arr[i] = copy(arr[j])
     arr[j] = tmp
 
 
