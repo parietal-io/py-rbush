@@ -37,15 +37,6 @@ def remove_item(node, bbox, is_equal):
     return items
 
 
-def findItem(item, items, equalsFn=None):
-    item = itemFromDict(item)
-    if not equalsFn:
-        return index(items, item)
-    for i in range(0, length(items)):
-        if equalsFn(item, get(items, i)):
-            return i
-    return None
-
 # @profile
 def insert(root, xmin, ymin, xmax, ymax, data,
            maxentries, minentries):
