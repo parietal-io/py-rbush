@@ -12,6 +12,11 @@ def create_node(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
     return node
 
 
+def create_root():
+    children = list()
+    return create_node(leaf=True, height=1, children=children)
+
+
 def get(children, index):
     try:
         child = children[index]

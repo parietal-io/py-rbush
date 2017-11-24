@@ -14,11 +14,7 @@ class RBush(object):
         self.clear()
 
     def clear(self):
-        self._root = self._create_root()
-
-    def _create_root(self):
-        children = list()
-        return create_node(leaf=True, height=1, children=children)
+        self._root = create_root()
 
     @property
     def xmin(self):
@@ -39,6 +35,10 @@ class RBush(object):
     @property
     def height(self):
         return self._root.height
+
+    @property
+    def empty(self):
+        return len(self._root.children) == 0
 
     def insert(self, xmin, ymin, xmax, ymax, data=None):
         """
@@ -118,7 +118,7 @@ class RBush(object):
             return self
 
         if data is not None:
-            arr = np.concatenate([arr[:,:4], data], axis=1)
+            arr = np.concatenate([arr[:, :4], data], axis=1)
         else:
             if ncols == 4:
                 data = np.empty((len(arr), 1), dtype=object)
@@ -152,7 +152,13 @@ class RBush(object):
         return search(self._root, xmin, ymin, xmax, ymax)
 
     def remove(self, xmin, ymin, xmax, ymax):
-        return remove(self._root, xmin, ymin, xmax, ymax)
+        """
+        Remove and return removed items matching 'xmin,ymin,xmax,ymax'
+        """
+        items = remove(self._root, xmin, ymin, xmax, ymax)
+        if self.empty:
+            self.clear()
+        return items
 
     def to_json(self):
         return to_json(self._root)

@@ -122,6 +122,12 @@ def adjust_bbox(node):
     return node
 
 
+def adjust_bboxes(bbox, path):
+    # adjust bboxes along the given tree path
+    for i in range(len(path)-1, -1, -1):
+        extend(path[i], bbox)
+
+
 #@profile
 def split(node, minentries):
     sort_splitaxis(node, minentries)

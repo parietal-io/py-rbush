@@ -23,7 +23,6 @@ def remove_item(node, bbox, is_equal):
         if len(items) > 0:
             adjust_bbox(node)
     else:
-        empty = None
         indexes = []
         for i in range(len(node.children)):
             child = get(node.children, i)
@@ -32,7 +31,7 @@ def remove_item(node, bbox, is_equal):
                 indexes.append(i)
         for i in range(len(indexes)-1, -1, -1):
             empty = node.children.pop(i)
-        if empty is not None:
+        if len(items) > 0:
             adjust_bbox(node)
     return items
 
@@ -65,6 +64,8 @@ def insert_node(root, item, maxentries, minentries):
 
     assert get(path, len(path)-1) is node
     assert get(path, 0) is root
+
+    adjust_bboxes(item, path)
 
     if len(node.children) > maxentries:
         root = balance_nodes(path, maxentries, minentries)
