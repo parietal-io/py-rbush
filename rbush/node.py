@@ -4,14 +4,14 @@ from .core import *
 import numba as nb
 
 
-# @nb.njit
+@nb.njit(["int64(int64,int64)", "float64(float64,float64)"])
 def max(x, y):
     if x > y:
         return x
     return y
 
 
-# @nb.njit
+@nb.njit(["int64(int64,int64)", "float64(float64,float64)"])
 def min(x, y):
     if x < y:
         return x

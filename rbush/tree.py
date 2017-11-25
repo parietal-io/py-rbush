@@ -250,11 +250,11 @@ def build_tree(data, first, last, maxentries, minentries, height=None):
     N2 = math.ceil(N / M)
     N1 = N2 * math.ceil(math.sqrt(M))
 
-    multiselect(data, first, last, N1, compare_x)
+    multiselect(data, first, last, N1, 0)
 
     for i in range(first, last+1, N1):
         last2 = min(i + N1 - 1, last)
-        multiselect(data, i, last2, N2, compare_y)
+        multiselect(data, i, last2, N2, 1)
         for j in range(i, last2+1, N2):
             last3 = min(j + N2 - 1, last2)
             # pack each entry recursively
@@ -277,7 +277,7 @@ def compare_y(a, b):
 
 
 #@profile
-def multiselect(data, first, last, n, compare):
+def multiselect(data, first, last, n, column):
     stack = [first, last]
     mid = None
     while len(stack):
@@ -286,13 +286,47 @@ def multiselect(data, first, last, n, compare):
         if (last - first) <= n:
             continue
         mid = first + math.ceil((last - first) / n / 2) * n
-        quickselect(data, mid, first, last, compare)
+        assert first <= mid <= last
+        sdata = create_subarray(data, first, last, column)
+        quickselect(sdata, mid-first, first-first, last-first)
+        data = overwrite_array(data, sdata, first, last)
+        # quickselect(data, mid, first, last)
         stack.extend([first, mid, mid, last])
 
-# from numba import njit
+
+def create_subarray(data, first, last, column):
+    last = last+1
+    arange = np.arange(first, last).reshape(last-first, 1)
+    sdata = data[first:last, column].reshape(last-first, 1)
+    sdata = np.concatenate([arange, sdata], axis=1).astype(int)
+    return sdata
+
+
+def overwrite_array(data, sdata, first, last):
+    last = last+1
+    inds = sdata[:, 0]
+    data[first:last] = data[inds.tolist()]
+    return data
+
+
+from numba import njit, int32, jit, int64
+
+
+@njit(int64(int64[:],int64[:]))
+def compare(a, b):
+    # return a.ymin - b.ymin
+    return a[1] - b[1]
+
+@njit((int64[:,:],int64,int64))
+def swap(arr, i, j):
+    tmp = arr[i]
+    arr[i] = arr[j]
+    arr[j] = tmp
+
+
 #@profile
-# @njit
-def quickselect(data, k, first, last, compare):
+@njit((int64[:,:],int64,int64,int64))
+def quickselect(data, k, first, last):
     while (last > first):
         if last - first > 600:
             n = last - first + 1
@@ -303,7 +337,7 @@ def quickselect(data, k, first, last, compare):
             sd = 0.5 * math.sqrt(z * s * (n - s) / n) * d
             newLeft = max(first, math.floor(k - m * s / n + sd))
             newRight = min(last, math.floor(k + (n - m) * s / n + sd))
-            quickselect(data, k, newLeft, newRight, compare)
+            quickselect(data, k, newLeft, newRight)
 
         t = data[k]
         i = first
@@ -332,12 +366,6 @@ def quickselect(data, k, first, last, compare):
             first = j + 1
         if (k <= j):
             last = j - 1
-
-
-def swap(arr, i, j):
-    tmp = copy(arr[i])
-    arr[i] = copy(arr[j])
-    arr[j] = tmp
 
 
 def default_compare(a, b):
