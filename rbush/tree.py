@@ -174,7 +174,7 @@ def retrieve_all_items(node):
     return items
 
 
-#@profile
+# @profile
 def load(root, data, maxentries, minentries):
     """
     Bulk insertion of items from 'data'
@@ -220,7 +220,7 @@ def load(root, data, maxentries, minentries):
     return root
 
 
-#@profile
+# @profile
 def build_tree(data, first, last, maxentries, minentries, height=None):
     """
     Build RBush from 'data' items between 'first','last' (inclusive)
@@ -276,7 +276,7 @@ def compare_y(a, b):
     return a[1] - b[1]
 
 
-#@profile
+# @profile
 def multiselect(data, first, last, n, column):
     stack = [first, last]
     mid = None
@@ -286,12 +286,17 @@ def multiselect(data, first, last, n, column):
         if (last - first) <= n:
             continue
         mid = first + math.ceil((last - first) / n / 2) * n
-        assert first <= mid <= last
-        sdata = create_subarray(data, first, last, column)
-        quickselect(sdata, mid-first, first-first, last-first)
-        data = overwrite_array(data, sdata, first, last)
-        # quickselect(data, mid, first, last)
+        quicksort(data, first, last, column)
+        # sdata = create_subarray(data, first, last, column)
+        # quickselect(sdata, mid-first, first-first, last-first)
+        # data = overwrite_array(data, sdata, first, last)
+        # # quickselect(data, mid, first, last)
         stack.extend([first, mid, mid, last])
+
+
+def quicksort(data, first, last, column):
+    idx = np.argsort(data[first:last, column], kind='mergesort')
+    data[first:last,:] = data[idx,:]
 
 
 def create_subarray(data, first, last, column):
@@ -324,8 +329,8 @@ def swap(arr, i, j):
     arr[j] = tmp
 
 
-#@profile
-@njit((int64[:,:],int64,int64,int64))
+# @profile
+# @njit((int64[:,:],int64,int64,int64))
 def quickselect(data, k, first, last):
     while (last > first):
         if last - first > 600:
@@ -333,7 +338,10 @@ def quickselect(data, k, first, last):
             m = k - first + 1
             z = math.log(n)
             s = 0.5 * math.exp(2 * z / 3)
-            d = -1 if m - n / 2 < 0 else 1
+            if m - n / 2 < 0:
+                d = -1
+            else:
+                d = 1
             sd = 0.5 * math.sqrt(z * s * (n - s) / n) * d
             newLeft = max(first, math.floor(k - m * s / n + sd))
             newRight = min(last, math.floor(k + (n - m) * s / n + sd))
