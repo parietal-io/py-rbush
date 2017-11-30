@@ -266,14 +266,14 @@ def build_tree(data, first, last, maxentries, minentries, height=None):
     return node
 
 
-def compare_x(a, b):
-    # return a.xmin - b.xmin
-    return a[0] - b[0]
-
-
-def compare_y(a, b):
-    # return a.ymin - b.ymin
-    return a[1] - b[1]
+# def compare_x(a, b):
+#     # return a.xmin - b.xmin
+#     return a[0] - b[0]
+#
+#
+# def compare_y(a, b):
+#     # return a.ymin - b.ymin
+#     return a[1] - b[1]
 
 
 # @profile
@@ -287,46 +287,43 @@ def multiselect(data, first, last, n, column):
             continue
         mid = first + math.ceil((last - first) / n / 2) * n
         quicksort(data, first, last, column)
-        # sdata = create_subarray(data, first, last, column)
-        # quickselect(sdata, mid-first, first-first, last-first)
-        # data = overwrite_array(data, sdata, first, last)
-        # # quickselect(data, mid, first, last)
         stack.extend([first, mid, mid, last])
 
 
+# @profile
 def quicksort(data, first, last, column):
-    idx = np.argsort(data[first:last, column], kind='mergesort')
+    idx = np.argsort(data[first:last, column], kind='quicksort')
     data[first:last,:] = data[idx,:]
 
 
-def create_subarray(data, first, last, column):
-    last = last+1
-    arange = np.arange(first, last).reshape(last-first, 1)
-    sdata = data[first:last, column].reshape(last-first, 1)
-    sdata = np.concatenate([arange, sdata], axis=1).astype(int)
-    return sdata
+# def create_subarray(data, first, last, column):
+#     last = last+1
+#     arange = np.arange(first, last).reshape(last-first, 1)
+#     sdata = data[first:last, column].reshape(last-first, 1)
+#     sdata = np.concatenate([arange, sdata], axis=1).astype(int)
+#     return sdata
 
 
-def overwrite_array(data, sdata, first, last):
-    last = last+1
-    inds = sdata[:, 0]
-    data[first:last] = data[inds.tolist()]
-    return data
+# def overwrite_array(data, sdata, first, last):
+#     last = last+1
+#     inds = sdata[:, 0]
+#     data[first:last] = data[inds.tolist()]
+#     return data
 
 
 from numba import njit, int32, jit, int64
 
 
-@njit(int64(int64[:],int64[:]))
-def compare(a, b):
-    # return a.ymin - b.ymin
-    return a[1] - b[1]
-
-@njit((int64[:,:],int64,int64))
-def swap(arr, i, j):
-    tmp = arr[i]
-    arr[i] = arr[j]
-    arr[j] = tmp
+# @njit(int64(int64[:],int64[:]))
+# def compare(a, b):
+#     # return a.ymin - b.ymin
+#     return a[1] - b[1]
+#
+# @njit((int64[:,:],int64,int64))
+# def swap(arr, i, j):
+#     tmp = arr[i]
+#     arr[i] = arr[j]
+#     arr[j] = tmp
 
 
 # @profile

@@ -160,8 +160,8 @@ class RBush(object):
             self.clear()
         return items
 
-    def to_json(self):
-        return to_json(self._root)
+    def to_json(self, indent=2):
+        return to_json(self._root, indent)
 
 
 def to_json(node, indent=None):
