@@ -2,8 +2,7 @@
 
 - Ensure all tests pass.
 
-- Update version number in `conda.recipe/meta.yaml`, `rbush/__init__.py`,
-  and `setup.py`. Commit.
+- Update version number in `conda.recipe/meta.yaml`. Commit.
 
 - Tag commit and push to github
 
@@ -25,8 +24,7 @@ CONDA_DIR="${CONDA_PREFIX%%anaconda/*}anaconda"
 PLATFORM=osx-64
 
 # Version number of rbush being released (e.g. 0.2.0)
-#VERSION=0.2.0
-VERSION=$(python -c 'import rbush;print(rbush.__version__.split("+")[0])')
+VERSION=0.2.0
 ```
 
 This assumes `conda`, `conda-build`, and `anaconda-client` are installed (if
