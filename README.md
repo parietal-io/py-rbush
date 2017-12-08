@@ -8,8 +8,15 @@ Python port of JS rbush library
 
 To run the (unit) tests, type:
 
+```bash
+$ pytest rbush
+```
+
+or
+
 ```python
->>> pytest rbush
+>>> import rbush
+>>> rbush.test()
 ```
 
 

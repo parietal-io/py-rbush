@@ -19,13 +19,14 @@ here, to fill in with your specifics:
 
 ```bash
 # Location of your conda install. For me it's `~/anaconda/`
-CONDA_DIR=~/anaconda/
+CONDA_DIR="${CONDA_PREFIX%%anaconda/*}anaconda"
 
 # Platform code. For me it's `osx-64`
 PLATFORM=osx-64
 
 # Version number of rbush being released (e.g. 0.2.0)
-VERSION=0.2.0
+#VERSION=0.2.0
+VERSION=$(python -c 'import rbush;print(rbush.__version__.split("+")[0])')
 ```
 
 This assumes `conda`, `conda-build`, and `anaconda-client` are installed (if
@@ -33,7 +34,10 @@ not, install `conda`, then use `conda` to install the others). From inside the
 toplevel directory:
 
 ```bash
-conda build conda.recipe/ --python 2.7 --python 3.5 --python 3.6
+cd conda.recipe/
+conda build --python 2.7 .
+conda build --python 3.5 .
+conda build --python 3.6 .
 ```
 
 Next, `cd` into the folder where the builds end up.
@@ -51,9 +55,8 @@ conda convert --platform linux-64 rbush-$VERSION*.tar.bz2 -o ../
 conda convert --platform win-64 rbush-$VERSION*.tar.bz2 -o ../
 ```
 
-Use `anaconda upload` to upload the build to the `bokeh` channel. This requires
-you to be setup on `anaconda.org`, and have the proper credentials to push to
-the bokeh channel.
+Use `anaconda upload`. This requires you to be setup on `anaconda.org`,
+and have the proper credentials to push.
 
 ```bash
 anaconda login
