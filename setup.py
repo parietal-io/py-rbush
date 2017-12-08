@@ -1,9 +1,10 @@
 from setuptools import find_packages, setup
 
-from rbush import __version__
+import versioneer
 
 setup(name='py-rbush',
-      version=__version__,
+      version=versioneer.get_version(),
+      cmdclass=versioneer.get_cmdclass(),
       description='Python port of JS rbush library',
       url='http://github.com/parietal-io/py-rbush',
       packages=find_packages(),
