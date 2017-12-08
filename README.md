@@ -36,3 +36,15 @@ insert 1M items one by one   | 224.9s       | 834.8s
 1000 searches of 10% area    | 47.6s        | 935.7s
 remove 1000 items one by one | 2.61s        | 9.56s
 bulk-insert 1M items         | 63.7s        | 101.1s
+
+
+## Changelog
+
+### 0.0.2 -- Dec 12, 2017
+
+* `insert` accepts arrays for `xmin, xmax, ymin, ymax`
+* `load` receives a numpy array
+
+### 0.0.1 -- Nov 12, 2017
+
+* plain python version of JavaScript rbush
