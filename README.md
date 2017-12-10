@@ -1,6 +1,10 @@
 This library is extremely alpha.  DO NOT USE for anything besides test / dev.
 -------
 
+# Mission
+The mission of RBush is to provide a performant, thread-safe RTree implementation for Python which
+does not have `libspatialindex` or `geos` as a dependencies.
+
 # py-rbush
 Python port of JS rbush library
 
