@@ -2,7 +2,7 @@ import time
 
 N_INSERT = 10**3
 N_REMOVE = 10**2
-MAX_ENTRIES = 9
+MAX_ENTRIES = 16
 
 
 def search(tree, data):
