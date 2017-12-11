@@ -96,16 +96,34 @@ def usage():
 
 
 if __name__ == '__main__':
-    import sys
 
-    _load = None
-    if len(sys.argv) > 3:
-        _load = sys.argv[3]
-    try:
-        N_remove = int(sys.argv[2]) if len(sys.argv) > 2 else None
-        N_insert = int(sys.argv[1]) if len(sys.argv) > 1 else None
-    except:
-        usage()
-        sys.exit(0)
+    if True:
+        import argparse
 
-    run(N_insert, N_remove, _load)
+        parser = argparse.ArgumentParser(description='Run benchmark.')
+        parser.add_argument('n_insert', type=int, nargs='?', default=None,
+                            help='Number of (mock) items to insert')
+        parser.add_argument('n_remove', type=int, nargs='?', default=None,
+                            help='Number of (mock) items to remove and search')
+        parser.add_argument('--load', dest='load', action='store_true',
+                            help='Load-only (dont do "item-by-item insert")')
+        args = parser.parse_args()
+
+        run(args.n_insert, args.n_remove, args.load)
+
+    else:
+        import sys
+
+        N_remove = None
+        N_insert = None
+        _load = None
+        if len(sys.argv) > 3:
+            _load = sys.argv[3]
+        try:
+            N_remove = int(sys.argv[2]) if len(sys.argv) > 2 else None
+            N_insert = int(sys.argv[1]) if len(sys.argv) > 1 else None
+        except:
+            usage()
+            sys.exit(0)
+
+        run(N_insert, N_remove, _load)

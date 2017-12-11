@@ -38,10 +38,13 @@ def extend(a, b):
     """
     xmin, ymin, xmax, ymax = _extend(a.xmin, a.ymin, a.xmax, a.ymax,
                                      b.xmin, b.ymin, b.xmax, b.ymax)
-    a.xmin = xmin
-    a.ymin = ymin
-    a.xmax = xmax
-    a.ymax = ymax
+    # a.xmin = xmin
+    # a.ymin = ymin
+    # a.xmax = xmax
+    # a.ymax = ymax
+    a = create_node(xmin, ymin, xmax, ymax,
+                    data=a.data, leaf=a.leaf,
+                    height=a.height, children=a.children)
     return a
 
 # @nb.njit
@@ -124,8 +127,13 @@ def adjust_bbox(node):
 
 def adjust_bboxes(bbox, path):
     # adjust bboxes along the given tree path
-    for i in range(len(path)-1, -1, -1):
-        extend(path[i], bbox)
+    # for i in range(len(path)-1, -1, -1):
+    #     extend(path[i], bbox)
+    new_path = []
+    for i in range(len(path)):
+        node = extend(path[i], bbox)
+        new_path.append(node)
+    return new_path
 
 
 #@profile
@@ -142,10 +150,10 @@ def split(node, minentries):
                            children=adopted)
 
     # Update the sizes (limits) of each box
-    adjust_bbox(node)
-    adjust_bbox(new_node)
+    node = adjust_bbox(node)
+    new_node = adjust_bbox(new_node)
 
-    return new_node
+    return node,new_node
 
 
 #@profile

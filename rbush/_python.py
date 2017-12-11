@@ -2,16 +2,6 @@ import numpy as np
 INF = np.iinfo(np.int64).max
 
 
-def create_node(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
-                data=None, leaf=None, height=None, children=None):
-    node = RBushNode(xmin, ymin, xmax, ymax)
-    node.data = data
-    node.leaf = leaf
-    node.height = height
-    node.children = children
-    return node
-
-
 def create_root():
     children = list()
     return create_node(leaf=True, height=1, children=children)
@@ -23,6 +13,29 @@ def get(children, index):
     except:
         child = None
     return child
+
+
+# from collections import namedtuple
+# RBushNode = namedtuple('RBushNode',
+#                        ['xmin', 'ymin', 'xmax', 'ymax',
+#                         'data', 'leaf', 'height', 'children'])
+#
+#
+# @profile
+# def create_node(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
+#                 data=None, leaf=None, height=None, children=None):
+#     node = RBushNode(xmin, ymin, xmax, ymax, data, leaf, height, children)
+#     return node
+
+@profile
+def create_node(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
+                data=None, leaf=None, height=None, children=None):
+    node = RBushNode(xmin, ymin, xmax, ymax)
+    node.data = data
+    node.leaf = leaf
+    node.height = height
+    node.children = children
+    return node
 
 
 class RBushNode(object):

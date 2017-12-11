@@ -61,15 +61,17 @@ def insert_node(root, item, maxentries, minentries):
     node = choose_subtree(root, item, level, path)
 
     node.children.append(item)
-    node = extend(node, item)
+    # node = extend(node, item)  # this will be done by 'adjust_bboxes' below
 
     assert get(path, len(path)-1) is node
     assert get(path, 0) is root
 
-    adjust_bboxes(item, path)
+    adjusted_path = adjust_bboxes(item, path)
 
     if len(node.children) > maxentries:
-        root = balance_nodes(path, maxentries, minentries)
+        root = balance_nodes(adjusted_path, maxentries, minentries)
+    else:
+        root = adjusted_path[0]
     return root
 
 
@@ -118,19 +120,25 @@ def balance_nodes(path, maxentries, minentries):
         node = get(path, level)
         if len(node.children) <= maxentries:
             break
-        new_node = split(node, minentries)
+        new_node1, new_node2 = split(node, minentries)
+        assert node.height == new_node1.height
+        assert node.height == new_node2.height
         if level > 0:
             parent = get(path, level-1)
-            parent.children.append(new_node)
+            ind = parent.children.index(node)
+            node_trash = parent.children.pop(i)
+            assert node is node_trash
+            parent.children.append(new_node1)
+            parent.children.append(new_node2)
             # NOTE: 'parent' has had your borders extended when we 'insert'
         else:
             children = list()
-            children.append(node)
-            children.append(new_node)
+            children.append(new_node1)
+            children.append(new_node2)
             root = create_node(children=children,
                                leaf=False,
-                               height=node.height+1)
-            adjust_bbox(root)
+                               height=new_node1.height+1)
+            root = adjust_bbox(root)
     return root
 
 
@@ -207,7 +215,7 @@ def load(root, data, maxentries, minentries):
         root = create_node(children=children,
                            leaf=False,
                            height=node.height+1)
-        adjust_bbox(root)
+        root = adjust_bbox(root)
     else:
         if root.height < node.height:
             # swap trees if inserted one is bigger
@@ -220,7 +228,7 @@ def load(root, data, maxentries, minentries):
     return root
 
 
-# @profile
+@profile
 def build_tree(data, first, last, maxentries, minentries, height=None):
     """
     Build RBush from 'data' items between 'first','last' (inclusive)
@@ -231,10 +239,10 @@ def build_tree(data, first, last, maxentries, minentries, height=None):
     if N <= M:
         children = list()
         for i in range(first, last+1):
-            children.append(create_node(data[i][0], data[i][1],
-                                        data[i][2], data[i][3]))
+            _node = create_node(data[i][0], data[i][1], data[i][2], data[i][3])
+            children.append(_node)
         node = create_node(children=children, leaf=True, height=1)
-        adjust_bbox(node)
+        node = adjust_bbox(node)
         return node
 
     if height is None:
@@ -262,7 +270,7 @@ def build_tree(data, first, last, maxentries, minentries, height=None):
                                             height=height - 1,
                                             maxentries=maxentries,
                                             minentries=minentries))
-    adjust_bbox(node)
+    node = adjust_bbox(node)
     return node
 
 
@@ -276,7 +284,7 @@ def build_tree(data, first, last, maxentries, minentries, height=None):
 #     return a[1] - b[1]
 
 
-# @profile
+@profile
 def multiselect(data, first, last, n, column):
     stack = [first, last]
     mid = None
@@ -290,7 +298,7 @@ def multiselect(data, first, last, n, column):
         stack.extend([first, mid, mid, last])
 
 
-# @profile
+@profile
 def quicksort(data, first, last, column):
     idx = np.argsort(data[first:last, column], kind='quicksort')
     data[first:last,:] = data[idx,:]
@@ -311,7 +319,7 @@ def quicksort(data, first, last, column):
 #     return data
 
 
-from numba import njit, int32, jit, int64
+# from numba import njit, int32, jit, int64
 
 
 # @njit(int64(int64[:],int64[:]))
@@ -328,54 +336,54 @@ from numba import njit, int32, jit, int64
 
 # @profile
 # @njit((int64[:,:],int64,int64,int64))
-def quickselect(data, k, first, last):
-    while (last > first):
-        if last - first > 600:
-            n = last - first + 1
-            m = k - first + 1
-            z = math.log(n)
-            s = 0.5 * math.exp(2 * z / 3)
-            if m - n / 2 < 0:
-                d = -1
-            else:
-                d = 1
-            sd = 0.5 * math.sqrt(z * s * (n - s) / n) * d
-            newLeft = max(first, math.floor(k - m * s / n + sd))
-            newRight = min(last, math.floor(k + (n - m) * s / n + sd))
-            quickselect(data, k, newLeft, newRight)
-
-        t = data[k]
-        i = first
-        j = last
-
-        swap(data, first, k)
-        if (compare(data[last], t) > 0):
-            swap(data, first, last)
-
-        while (i < j):
-            swap(data, i, j)
-            i = i+1
-            j = j-1
-            while (compare(data[i], t) < 0):
-                i = i+1
-            while (compare(data[j], t) > 0):
-                j = j-1
-
-        if (compare(data[first], t) == 0):
-            swap(data, first, j)
-        else:
-            j = j+1
-            swap(data, j, last)
-
-        if (j <= k):
-            first = j + 1
-        if (k <= j):
-            last = j - 1
-
-
-def default_compare(a, b):
-    if a < b:
-        return -1
-    if a > b:
-        return 1
-    return 0
+# def quickselect(data, k, first, last):
+#     while (last > first):
+#         if last - first > 600:
+#             n = last - first + 1
+#             m = k - first + 1
+#             z = math.log(n)
+#             s = 0.5 * math.exp(2 * z / 3)
+#             if m - n / 2 < 0:
+#                 d = -1
+#             else:
+#                 d = 1
+#             sd = 0.5 * math.sqrt(z * s * (n - s) / n) * d
+#             newLeft = max(first, math.floor(k - m * s / n + sd))
+#             newRight = min(last, math.floor(k + (n - m) * s / n + sd))
+#             quickselect(data, k, newLeft, newRight)
+#
+#         t = data[k]
+#         i = first
+#         j = last
+#
+#         swap(data, first, k)
+#         if (compare(data[last], t) > 0):
+#             swap(data, first, last)
+#
+#         while (i < j):
+#             swap(data, i, j)
+#             i = i+1
+#             j = j-1
+#             while (compare(data[i], t) < 0):
+#                 i = i+1
+#             while (compare(data[j], t) > 0):
+#                 j = j-1
+#
+#         if (compare(data[first], t) == 0):
+#             swap(data, first, j)
+#         else:
+#             j = j+1
+#             swap(data, j, last)
+#
+#         if (j <= k):
+#             first = j + 1
+#         if (k <= j):
+#             last = j - 1
+#
+#
+# def default_compare(a, b):
+#     if a < b:
+#         return -1
+#     if a > b:
+#         return 1
+#     return 0
