@@ -5,6 +5,11 @@ This library is extremely alpha.  DO NOT USE for anything besides test / dev.
 The mission of RBush is to provide a performant, thread-safe RTree implementation for Python which
 does not have `libspatialindex` or `geos` as a dependencies.
 
+# Installation
+```bash
+conda install -c parietal.io rbush
+```
+
 # py-rbush
 Python port of JS rbush library
 
