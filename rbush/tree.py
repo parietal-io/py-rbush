@@ -228,7 +228,7 @@ def load(root, data, maxentries, minentries):
     return root
 
 
-@profile
+#@profile
 def build_tree(data, first, last, maxentries, minentries, height=None):
     """
     Build RBush from 'data' items between 'first','last' (inclusive)
@@ -286,7 +286,7 @@ def build_tree(data, first, last, maxentries, minentries, height=None):
 #     return a[1] - b[1]
 
 
-@profile
+#@profile
 def multiselect(data, first, last, n, column):
     stack = [first, last]
     mid = None
@@ -300,7 +300,7 @@ def multiselect(data, first, last, n, column):
         stack.extend([first, mid, mid, last])
 
 
-@profile
+#@profile
 def quicksort(data, first, last, column):
     idx = np.argsort(data[first:last, column], kind='quicksort')
     data[first:last,:] = data[idx,:]

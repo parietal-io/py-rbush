@@ -21,7 +21,7 @@ RBushNode = namedtuple('RBushNode',
                         'data', 'leaf', 'height', 'children'])
 
 
-@profile
+#@profile
 def create_node(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
                 data=None, leaf=None, height=None, children=None):
     node = RBushNode(xmin, ymin, xmax, ymax, data, leaf, height, children)
