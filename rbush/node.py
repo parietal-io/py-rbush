@@ -117,12 +117,34 @@ def calc_bbox(node, left_index, right_index, destnode=None):
     return destnode
 
 
+def calc_bbox_children_indexes(children, i_ini, i_fin):
+    xmin = INF
+    xmax = -INF
+    ymin = INF
+    ymax = -INF
+    for i in range(i_ini, i_fin):
+        child = get(children, i)
+        xmin = min(xmin, child.xmin)
+        ymin = min(ymin, child.ymin)
+        xmax = max(xmax, child.xmax)
+        ymax = max(ymax, child.ymax)
+    return (xmin, ymin, xmax, ymax)
+
+
+def calc_bbox_children(children):
+    return calc_bbox_children_indexes(children, 0, len(children))
+
+
 def adjust_bbox(node):
     """
     Update node borders after its children
     """
-    node = calc_bbox(node, 0, len(node.children), node)
-    return node
+    bbox = calc_bbox_children(node.children)
+    xmin, ymin, xmax, ymax = bbox
+    new_node = create_node(xmin, ymin, xmax, ymax,
+                           data=node.data, children=node.children,
+                           leaf=node.leaf, height=node.height)
+    return new_node
 
 
 def adjust_bboxes(bbox, path):
@@ -130,11 +152,21 @@ def adjust_bboxes(bbox, path):
     # for i in range(len(path)-1, -1, -1):
     #     extend(path[i], bbox)
     new_path = []
-    for i in range(len(path)):
+    child = None
+    for i in range(len(path)-1, -1, -1):
         node = extend(path[i], bbox)
+        if child is not None:
+            substitute(node, path[i+1], child)
+        child = node
         new_path.append(node)
+    new_path.reverse()
     return new_path
 
+
+def substitute(parent, old_child, new_child):
+    parent.children.remove(old_child)
+    parent.children.append(new_child)
+    
 
 #@profile
 def split(node, minentries):
@@ -145,13 +177,12 @@ def split(node, minentries):
 
     num_children = len(node.children) - index
     adopted = splice(node.children, index, num_children)
-    new_node = create_node(height=node.height,
-                           leaf=node.leaf,
-                           children=adopted)
+    bbox = calc_bbox_children(adopted)
+    new_node = create_node(bbox[0], bbox[1], bbox[2], bbox[3],
+                           height=node.height, leaf=node.leaf, children=adopted)
 
     # Update the sizes (limits) of each box
     node = adjust_bbox(node)
-    new_node = adjust_bbox(new_node)
 
     return node,new_node
 

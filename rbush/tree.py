@@ -125,9 +125,10 @@ def balance_nodes(path, maxentries, minentries):
         assert node.height == new_node2.height
         if level > 0:
             parent = get(path, level-1)
-            ind = parent.children.index(node)
-            node_trash = parent.children.pop(i)
-            assert node is node_trash
+            parent.children.remove(node)
+            # ind = parent.children.index(node)
+            # node_trash = parent.children.pop(ind)
+            # assert node is node_trash
             parent.children.append(new_node1)
             parent.children.append(new_node2)
             # NOTE: 'parent' has had your borders extended when we 'insert'
@@ -212,10 +213,9 @@ def load(root, data, maxentries, minentries):
         children = list()
         children.append(root)
         children.append(node)
-        root = create_node(children=children,
-                           leaf=False,
-                           height=node.height+1)
-        root = adjust_bbox(root)
+        bbox = calc_bbox_children(children)
+        root = create_node(bbox[0], bbox[1], bbox[2], bbox[3],
+                           children=children, leaf=False, height=node.height+1)
     else:
         if root.height < node.height:
             # swap trees if inserted one is bigger
@@ -241,8 +241,9 @@ def build_tree(data, first, last, maxentries, minentries, height=None):
         for i in range(first, last+1):
             _node = create_node(data[i][0], data[i][1], data[i][2], data[i][3])
             children.append(_node)
-        node = create_node(children=children, leaf=True, height=1)
-        node = adjust_bbox(node)
+        bbox = calc_bbox_children(children)
+        node = create_node(bbox[0], bbox[1], bbox[2], bbox[3],
+                           children=children, leaf=True, height=1)
         return node
 
     if height is None:
@@ -252,25 +253,26 @@ def build_tree(data, first, last, maxentries, minentries, height=None):
         # target number of root entries to maximize storage utilization
         M = math.ceil(N / math.pow(M, height - 1))
 
-    node = create_node(leaf=False, height=height, children=list())
-
     # split the data into M mostly square tiles
     N2 = math.ceil(N / M)
     N1 = N2 * math.ceil(math.sqrt(M))
 
     multiselect(data, first, last, N1, 0)
 
+    children = list()
     for i in range(first, last+1, N1):
         last2 = min(i + N1 - 1, last)
         multiselect(data, i, last2, N2, 1)
         for j in range(i, last2+1, N2):
             last3 = min(j + N2 - 1, last2)
             # pack each entry recursively
-            node.children.append(build_tree(data, first=j, last=last3,
-                                            height=height - 1,
-                                            maxentries=maxentries,
-                                            minentries=minentries))
-    node = adjust_bbox(node)
+            children.append(build_tree(data, first=j, last=last3,
+                                       height=height - 1,
+                                       maxentries=maxentries,
+                                       minentries=minentries))
+    bbox = calc_bbox_children(children)
+    node = create_node(bbox[0], bbox[1], bbox[2], bbox[3],
+                       leaf=False, height=height, children=children)
     return node
 
 
