@@ -11,7 +11,12 @@ def generate_numpy_data(n=1000, size=50):
 
 
 def generate_data_array(n=1000, size=50):
-    arrays = generate_numpy_data(n, size)
+    from numpy.random import randn
+    xmin = randn(n) * (100 - size)
+    ymin = randn(n) * (100 - size)
+    xmax = xmin + size
+    ymax = ymin + size
+    arrays = {'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax}
     data = np.array([arrays['xmin'],
                      arrays['ymin'],
                      arrays['xmax'],
