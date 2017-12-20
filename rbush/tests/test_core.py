@@ -384,6 +384,16 @@ def test_chain():
     assert sorted_equal(items, data_items)
 
 
+def test_tree_data():
+    data = data_array
+    t = RBush()
+    t.load(data)
+    bboxes = np.asarray([[i.xmin, i.ymin, i.xmax, i.ymax] for i in t.all()])
+    ad = np.asarray([data.min(axis=0),data.max(axis=0),data.mean(axis=0)], int)
+    ab = np.asarray([bboxes.min(axis=0),bboxes.max(axis=0),bboxes.mean(axis=0)], int)
+    assert np.array_equal(ad,ab)
+
+
 # t('constructor accepts a format argument to customize the data format',
 # def test_format_argument():
 #     tree = RBush(4, ['minLng', 'minLat', 'maxLng', 'maxLat'])
