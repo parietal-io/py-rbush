@@ -303,6 +303,7 @@ def multiselect(data, first, last, n, column):
 #@profile
 def quicksort(data, first, last, column):
     idx = np.argsort(data[first:last, column], kind='quicksort')
+    idx += first
     data[first:last,:] = data[idx,:]
 
 
