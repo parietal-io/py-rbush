@@ -2,6 +2,8 @@ from .node import *
 from copy import copy
 import math
 
+import numpy as np
+
 
 def remove(root, xmin, ymin, xmax, ymax):
     bbox = create_node(xmin, ymin, xmax, ymax)
@@ -146,9 +148,10 @@ def balance_nodes(path, maxentries, minentries):
 # @profile
 def search(node, xmin, ymin, xmax, ymax):
     bbox = create_node(xmin, ymin, xmax, ymax)
-    return search_node(node, bbox)
+    nodes = search_node(node, bbox)
+    return np.asarray([[n.xmin, n.ymin, n.xmax, n.ymax] for n in nodes])
 
-
+@profile
 def search_node(node, bbox):
     items = list()
     if node is None:
@@ -276,16 +279,6 @@ def build_tree(data, first, last, maxentries, minentries, height=None):
     return node
 
 
-# def compare_x(a, b):
-#     # return a.xmin - b.xmin
-#     return a[0] - b[0]
-#
-#
-# def compare_y(a, b):
-#     # return a.ymin - b.ymin
-#     return a[1] - b[1]
-
-
 #@profile
 def multiselect(data, first, last, n, column):
     stack = [first, last]
@@ -305,88 +298,3 @@ def quicksort(data, first, last, column):
     idx = np.argsort(data[first:last, column], kind='quicksort')
     idx += first
     data[first:last,:] = data[idx,:]
-
-
-# def create_subarray(data, first, last, column):
-#     last = last+1
-#     arange = np.arange(first, last).reshape(last-first, 1)
-#     sdata = data[first:last, column].reshape(last-first, 1)
-#     sdata = np.concatenate([arange, sdata], axis=1).astype(int)
-#     return sdata
-
-
-# def overwrite_array(data, sdata, first, last):
-#     last = last+1
-#     inds = sdata[:, 0]
-#     data[first:last] = data[inds.tolist()]
-#     return data
-
-
-# from numba import njit, int32, jit, int64
-
-
-# @njit(int64(int64[:],int64[:]))
-# def compare(a, b):
-#     # return a.ymin - b.ymin
-#     return a[1] - b[1]
-#
-# @njit((int64[:,:],int64,int64))
-# def swap(arr, i, j):
-#     tmp = arr[i]
-#     arr[i] = arr[j]
-#     arr[j] = tmp
-
-
-# @profile
-# @njit((int64[:,:],int64,int64,int64))
-# def quickselect(data, k, first, last):
-#     while (last > first):
-#         if last - first > 600:
-#             n = last - first + 1
-#             m = k - first + 1
-#             z = math.log(n)
-#             s = 0.5 * math.exp(2 * z / 3)
-#             if m - n / 2 < 0:
-#                 d = -1
-#             else:
-#                 d = 1
-#             sd = 0.5 * math.sqrt(z * s * (n - s) / n) * d
-#             newLeft = max(first, math.floor(k - m * s / n + sd))
-#             newRight = min(last, math.floor(k + (n - m) * s / n + sd))
-#             quickselect(data, k, newLeft, newRight)
-#
-#         t = data[k]
-#         i = first
-#         j = last
-#
-#         swap(data, first, k)
-#         if (compare(data[last], t) > 0):
-#             swap(data, first, last)
-#
-#         while (i < j):
-#             swap(data, i, j)
-#             i = i+1
-#             j = j-1
-#             while (compare(data[i], t) < 0):
-#                 i = i+1
-#             while (compare(data[j], t) > 0):
-#                 j = j-1
-#
-#         if (compare(data[first], t) == 0):
-#             swap(data, first, j)
-#         else:
-#             j = j+1
-#             swap(data, j, last)
-#
-#         if (j <= k):
-#             first = j + 1
-#         if (k <= j):
-#             last = j - 1
-#
-#
-# def default_compare(a, b):
-#     if a < b:
-#         return -1
-#     if a > b:
-#         return 1
-#     return 0
