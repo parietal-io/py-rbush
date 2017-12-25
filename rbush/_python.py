@@ -2,10 +2,11 @@ import numpy as np
 INF = np.iinfo(np.int64).max
 
 
-def create_root():
-    children = list()
+def create_root(children=None, height=1, leaf=True):
+    if children is None:
+        children = []
     bbox = np.array([INF, INF, -INF, -INF])
-    return create_node(bbox, leaf=True, height=1, children=children)
+    return create_node(bbox, leaf=leaf, height=height, children=children)
 
 
 def get(children, index):

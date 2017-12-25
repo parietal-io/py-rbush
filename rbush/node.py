@@ -30,6 +30,15 @@ def xmaxf(node):
 def ymaxf(node):
     return node[0][3]
 
+def leaff(node):
+    return node[2]
+
+def childrenf(node):
+    return node[1]
+
+def heightf(node):
+    return node[-1]
+
 
 #@profile
 def calc_enlarged_area(a, b):
@@ -51,13 +60,8 @@ def extend(a, b):
     """
     xmin, ymin, xmax, ymax = _extend(xminf(a), yminf(a), xmaxf(a), ymaxf(a),
                                      xminf(b), yminf(b), xmaxf(b), ymaxf(b))
-    # a.xmin = xmin
-    # a.ymin = ymin
-    # a.xmax = xmax
-    # a.ymax = ymax
-    a = create_node(xmin, ymin, xmax, ymax,
-                    data=a.data, leaf=a.leaf,
-                    height=a.height, children=a.children)
+    a = create_node([xmin, ymin, xmax, ymax],
+                    leaf=leaff(a), height=heightf(a), children=childrenf(a))
     return a
 
 # @nb.njit
@@ -87,18 +91,18 @@ def calc_dist_ymargin(node, minentries):
 
 
 def sort_xmargin(node):
-    node.children.sort(key=lambda a: xminf(a))
+    childrenf(node).sort(key=lambda a: xminf(a))
     return node
 
 
 def sort_ymargin(node):
-    node.children.sort(key=lambda a: yminf(a))
+    childrenf(node).sort(key=lambda a: yminf(a))
     return node
 
 
 #@profile
 def calc_dist_margin(node, minentries):
-    M = len(node.children)
+    M = len(childrenf(node))
     m = minentries
 
     bbox_left = calc_bbox(node, 0, m)
@@ -106,12 +110,12 @@ def calc_dist_margin(node, minentries):
     margin = calc_bbox_margin(bbox_left) + calc_bbox_margin(bbox_right)
 
     for i in range(m, M - m):
-        child = get(node.children, i)
+        child = get(childrenf(node), i)
         bbox_left = extend(bbox_left, child)
         margin = margin + calc_bbox_margin(bbox_left)
 
     for i in range(M-m-1, m-1, -1):
-        child = get(node.children, i)
+        child = get(childrenf(node), i)
         bbox_right = extend(bbox_right, child)
         margin = margin + calc_bbox_margin(bbox_right)
 
@@ -123,9 +127,9 @@ def calc_bbox(node, left_index, right_index, destnode=None):
     Return a node enlarged by all children between left/right
     """
     if destnode is None:
-        destnode = create_node()
+        destnode = create_node([INF, INF, -INF, -INF])
     for i in range(left_index, right_index):
-        child = get(node.children, i)
+        child = get(childrenf(node), i)
         destnode = extend(destnode, child)
     return destnode
 
@@ -152,11 +156,9 @@ def adjust_bbox(node):
     """
     Update node borders after its children
     """
-    bbox = calc_bbox_children(node.children)
-    xmin, ymin, xmax, ymax = bbox
-    new_node = create_node(xmin, ymin, xmax, ymax,
-                           data=node.data, children=node.children,
-                           leaf=node.leaf, height=node.height)
+    bbox = calc_bbox_children(childrenf(node))
+    new_node = create_node(bbox, children=childrenf(node),
+                           leaf=leaff(node), height=heightf(node))
     return new_node
 
 
@@ -177,8 +179,8 @@ def adjust_bboxes(bbox, path):
 
 
 def substitute(parent, old_child, new_child):
-    parent.children.remove(old_child)
-    parent.children.append(new_child)
+    childrenf(parent).remove(old_child)
+    childrenf(parent).append(new_child)
 
 
 #@profile
@@ -188,11 +190,10 @@ def split(node, minentries):
     if index is None:
         index = minentries
 
-    num_children = len(node.children) - index
-    adopted = splice(node.children, index, num_children)
+    num_children = len(childrenf(node)) - index
+    adopted = splice(childrenf(node), index, num_children)
     bbox = calc_bbox_children(adopted)
-    new_node = create_node(bbox[0], bbox[1], bbox[2], bbox[3],
-                           height=node.height, leaf=node.leaf, children=adopted)
+    new_node = create_node(bbox, height=heightf(node), leaf=leaff(node), children=adopted)
 
     # Update the sizes (limits) of each box
     node = adjust_bbox(node)
@@ -217,7 +218,7 @@ def choose_splitindex(node, minentries):
     Split position tries to minimize (primarily) the boxes overlap
     and, secondly, the area cover by each combination of boxes.
     '''
-    M = len(node.children)
+    M = len(childrenf(node))
     m = minentries
 
     minArea = INF

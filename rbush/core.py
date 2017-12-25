@@ -18,27 +18,27 @@ class RBush(object):
 
     @property
     def xmin(self):
-        return self._root.xmin
+        return xminf(self._root)
 
     @property
     def ymin(self):
-        return self._root.ymin
+        return yminf(self._root)
 
     @property
     def xmax(self):
-        return self._root.xmax
+        return xmaxf(self._root)
 
     @property
     def ymax(self):
-        return self._root.ymax
+        return ymaxf(self._root)
 
     @property
     def height(self):
-        return self._root.height
+        return heightf(self._root)
 
     @property
     def empty(self):
-        return len(self._root.children) == 0
+        return len(childrenf(self._root)) == 0
 
     def insert(self, xmin, ymin, xmax, ymax, data=None):
         """
@@ -108,20 +108,14 @@ class RBush(object):
             print(msg)
             return self
 
-        assert isinstance(arr, np.ndarray)
+        msg = "expected a numpy.ndarray, instead {} was given".format(type(arr))
+        assert isinstance(arr, np.ndarray), msg
 
         ncols = arr.shape[1]
         if ncols < 4:
             msg = ("Error: 'arr' shape mismatch, was expecting 4 coluns")
             print(msg)
             return self
-
-        # if data is not None:
-        #     arr = np.concatenate([arr[:, :4], data], axis=1)
-        # else:
-        #     if ncols == 4:
-        #         data = np.empty((len(arr), 1), dtype=object)
-        #         arr = np.concatenate([arr, data], axis=1)
 
         root = load(self._root, arr,
                     maxentries=self.maxentries, minentries=self.minentries)
@@ -170,18 +164,20 @@ def to_json(node, indent=None):
 
 
 def to_dict(node):
-    content = dict(xmin=node.xmin,
-                   ymin=node.ymin,
-                   xmax=node.xmax,
-                   ymax=node.ymax)
-    if node.children is not None:
-        content['leaf'] = node.leaf
-        content['height'] = node.height
-        children = []
-        for i in range(len(node.children)):
-            child = get(node.children, i)
+    content = dict(xmin=xminf(node),
+                   ymin=yminf(node),
+                   xmax=xmaxf(node),
+                   ymax=ymaxf(node))
+    content['leaf'] = leaff(node)
+    content['height'] = heightf(node)
+    children = []
+    if leaff(node) is False:
+        for i in range(len(childrenf(node))):
+            child = get(childrenf(node), i)
             children.append(to_dict(child))
-        content['children'] = children
     else:
-        content['data'] = node.data
+        for i in range(len(childrenf(node))):
+            child = get(childrenf(node), i)
+            children.append(child)
+    content['children'] = children
     return content

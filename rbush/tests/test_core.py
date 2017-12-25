@@ -41,11 +41,10 @@ arr = [[0, 0, 0, 0], [10, 10, 10, 10], [20, 20, 20, 20], [25, 0, 25, 0],
        [85, 60, 85, 60], [95, 70, 95, 70], [50, 75, 50, 75], [60, 85, 60, 85],
        [70, 95, 70, 95], [75, 75, 75, 75], [85, 85, 85, 85], [95, 95, 95, 95]]
 
-data_items = list(map(arr_to_bbox, arr))
-
 data_array = np.array(arr)
 
 data_columns = arr_to_columns(data_array)
+
 
 arr2 = [[-Infinity, -Infinity, Infinity, Infinity],
         [-Infinity, -Infinity, Infinity, Infinity],
@@ -54,36 +53,19 @@ arr2 = [[-Infinity, -Infinity, Infinity, Infinity],
         [-Infinity, -Infinity, Infinity, Infinity],
         [-Infinity, -Infinity, Infinity, Infinity]]
 
-empty_items = list(map(arr_to_bbox, arr2))
-
 empty_array = np.array(arr2)
 
 empty_columns = arr_to_columns(empty_array)
 
 
-def default_compare(a):
-    return a['xmin'] + a['ymin'] + a['xmax'] + a['ymax']
-
-
-def sorted_equal(a, b, compare=None):
-    compare = compare if compare else default_compare
-    return a[:].sort(key=compare) == b[:].sort(key=compare)
+def sorted_equal(bboxes, data):
+    ad = np.asarray([data.min(axis=0), data.max(axis=0), data.mean(axis=0)], int)
+    ab = np.asarray([bboxes.min(axis=0), bboxes.max(axis=0), bboxes.mean(axis=0)], int)
+    return np.array_equal(ad, ab)
 
 
 # TESTS ======================================================================
 #
-def test_insert_remove_item():
-    item = dict(xmin=0, ymin=10, xmax=20, ymax=30)
-    tree = RBush()
-    tree.insert(**item)
-    assert all([tree.xmin == item['xmin'],
-                tree.ymin == item['ymin'],
-                tree.xmax == item['xmax'],
-                tree.ymax == item['ymax']])
-    tree.remove(**item)
-    assert len(tree.all()) == 0
-
-
 def test_root_split():
     maxEntries = 9
     items = some_data(9+1)
@@ -96,38 +78,32 @@ def test_root_split():
 def test_default_maxentries():
     # constructor uses 9 max entries by default
     tree = RBush()
-    tree.load(arr[:9])
+    tree.load(data_array[:9])
     assert tree.height == 1
 
     tree2 = RBush()
-    tree2.load(arr[:10])
+    tree2.load(data_array[:10])
     assert tree2.height == 2
 
 
 def test_load():
     tree = RBush(4)
-    tree.load(arr)
-    items = [to_dict(n) for n in tree.all()]
-    assert sorted_equal(items, data_items)
-
-
-def test_load_numpy():
-    tree = RBush(4)
     tree.load(data_array)
-    items = [to_dict(n) for n in tree.all()]
-    assert sorted_equal(items, data_items)
+
+    items = np.asarray([i[0] for i in tree.all()])
+    assert sorted_equal(data_array, items)
 
 
-def test_load_few():
+def test_load_insert():
     tree = RBush(8, 4)
-    tree.load(data_array[:20])
-    tree.load(data_array[0:3])
+    tree.load(data_array[:17])
+    tree.load(data_array[17:20])
 
     tree2 = RBush(8, 4)
-    tree2.load(data_array[:20])
-    tree2.insert(*data_array[0])
-    tree2.insert(*data_array[1])
-    tree2.insert(*data_array[2])
+    tree2.load(data_array[:17])
+    tree2.insert(*data_array[17])
+    tree2.insert(*data_array[18])
+    tree2.insert(*data_array[19])
 
     assert tree.to_json() == tree2.to_json()
 
@@ -138,26 +114,37 @@ def test_data_load_empty():
     assert tree.to_json() == RBush().to_json()
 
 
-# t('#load handles the insertion of maxEntries + 2 empty bboxes',
 def test_data_load_empty_maxEntries():
     tree = RBush(4)
     tree.load(empty_array)
 
     assert tree.height == 2
-    items = [to_dict(n) for n in tree.all()]
-    assert sorted_equal(items, empty_items)
+    items = np.asarray([i[0] for i in tree.all()])
+    assert sorted_equal(empty_array, items)
+
+
+def test_insert_remove_item():
+    item = dict(xmin=0, ymin=10, xmax=20, ymax=30)
+    tree = RBush()
+    tree.insert(**item)
+    assert all([tree.xmin == item['xmin'],
+                tree.ymin == item['ymin'],
+                tree.xmax == item['xmax'],
+                tree.ymax == item['ymax']])
+    tree.remove(**item)
+    assert len(tree.all()) == 0
 
 
 # t('#insert handles the insertion of maxEntries + 2 empty bboxes',
 def test_data_insert_empty_maxEntries():
     tree = RBush(4)
 
-    for datum in empty_items:
-        tree.insert(**datum)
+    for datum in empty_array:
+        tree.insert(*datum)
 
     assert tree.height == 2
-    items = [to_dict(n) for n in tree.all()]
-    assert sorted_equal(items, empty_items)
+    items = np.asarray([i[0] for i in tree.all()])
+    assert sorted_equal(empty_array, items)
 
 
 def test_split_root_on_merge():
@@ -165,16 +152,15 @@ def test_split_root_on_merge():
     tree.load(data_array)
     tree.load(data_array)
 
+    data = np.concatenate([data_array, data_array])
+
     assert tree.height == 4
-    data_items.extend(data_items)
-    items = [to_dict(n) for n in tree.all()]
-    assert sorted_equal(items, data_items)
+    items = np.asarray([i[0] for i in tree.all()])
+    assert sorted_equal(data, items)
 
 
 def test_merge_trees():
     smaller = data_array[:10]
-#    data_items = data_items + data_items[:10]
-    data_items.extend(data_items[:10])
 
     tree1 = RBush(4)
     tree1.load(data_array)
@@ -185,11 +171,9 @@ def test_merge_trees():
     tree2.load(data_array)
 
     assert tree1.height == tree2.height
-
-    items1 = [to_dict(n) for n in tree1.all()]
-    assert sorted_equal(items1, data_items)
-    items2 = [to_dict(n) for n in tree2.all()]
-    assert sorted_equal(items2, data_items)
+    items1 = np.asarray([i[0] for i in tree1.all()])
+    items2 = np.asarray([i[0] for i in tree2.all()])
+    assert sorted_equal(items1, items2)
 
 
 def test_find_matching_bbox():
@@ -205,18 +189,10 @@ def test_find_matching_bbox():
         [50, 25, 50, 25], [60, 35, 60, 35], [70, 45, 70, 45]
     ]
 
-    compare_data = list(map(arr_to_bbox, compare_data))
+    compare_data = np.asarray(compare_data)
 
-    items = [to_dict(n) for n in result]
+    items = np.asarray([i[0] for i in result])
     assert sorted_equal(items, compare_data)
-
-
-# # collides returns true when search finds matching points'
-# def test_find_collision():
-#     tree = RBush(4)
-#     tree.load(data)
-#     result = tree.collides({'xmin': 40, 'ymin': 20, 'xmax': 80, 'ymax': 70})
-#     assert result
 
 
 def test_find_empty_result():
@@ -227,39 +203,15 @@ def test_find_empty_result():
     assert result == []
 
 
-# # collides returns false if nothing found
-# def test_find_no_collision():
-#     tree = RBush(4)
-#     tree.load(data)
-#     # result = tree.collides([200, 200, 210, 210])
-#     result = tree.collides(arr_to_bbox([200, 200, 210, 210]))
-#
-#     assert not result
-
-
 def test_retrieve_all():
-
     tree = RBush(4)
     tree.load(data_array)
 
-    items = [to_dict(n) for n in tree.all()]
-    assert sorted_equal(items, data_items)
-
-    bbox = {'xmin': 0, 'ymin': 0, 'xmax': 100, 'ymax': 100}
-    items = [to_dict(n) for n in tree.search(**bbox)]
-    assert sorted_equal(items, data_items)
-
-
-# # t('#toDict & #fromJSON exports and imports search tree in JSON format',
-# def test_json_io():
-#     tree = RBush(4)
-#     tree.load(data)
-#     tree2 = RBush(4)
-#     tree2.fromJSON(tree.toJSON())
-#
-#     items = tree.all()
-#     items2 = tree2.all()
-#     assert sorted_equal(items, items2)
+    bbox = {'xmin': -Infinity, 'ymin': -Infinity,
+            'xmax': Infinity, 'ymax': Infinity}
+    result = tree.search(**bbox)
+    items = np.asarray([i[0] for i in result])
+    assert sorted_equal(items, data_array)
 
 
 def test_insert_item():
@@ -268,20 +220,20 @@ def test_insert_item():
             [2, 2, 2, 2],
             [3, 3, 3, 3],
             [1, 1, 2, 2]]
-    items = list(map(arr_to_bbox, data))
+    data = np.asarray(data)
 
     tree = RBush(4)
     tree.load(data[0:3])
 
     tree.insert(*data[3])
     assert tree.height == 1
-    result = [to_dict(n) for n in tree.all()]
-    assert sorted_equal(result, items[0:4])
+    result = np.asarray([i[0] for i in tree.all()])
+    assert sorted_equal(result, data[0:4])
 
-    tree.insert(**items[4])
+    tree.insert(*data[4])
     assert tree.height == 2
-    result = [to_dict(n) for n in tree.all()]
-    assert sorted_equal(result, items)
+    result = np.asarray([i[0] for i in tree.all()])
+    assert sorted_equal(result, data)
 
 
 def test_insert_none():
@@ -302,9 +254,10 @@ def test_insert_items():
     tree2 = RBush(4)
     tree2.load(data_array)
 
+    items1 = np.asarray([i[0] for i in tree1.all()])
+    items2 = np.asarray([i[0] for i in tree2.all()])
+
     assert 0 <= tree1.height - tree2.height <= 1
-    items1 = [to_dict(n) for n in tree1.all()]
-    items2 = [to_dict(n) for n in tree2.all()]
     assert sorted_equal(items1, items2)
 
 
@@ -326,23 +279,18 @@ def test_remove_items():
     tree = RBush(4)
     tree.load(data_array)
 
-    assert tree.height > 1
-
     len_ = len(data_array)
     items_removed = []
     items_removed.extend(tree.remove(*data_array[0]))
     items_removed.extend(tree.remove(*data_array[1]))
     items_removed.extend(tree.remove(*data_array[2]))
 
-    items_removed.extend(tree.remove(*data_array[len_ - 1]))
-    items_removed.extend(tree.remove(*data_array[len_ - 2]))
-    items_removed.extend(tree.remove(*data_array[len_ - 3]))
+    items_removed = np.asarray([i[0] for i in items_removed])
 
-    items = [to_dict(n) for n in tree.all()]
-    assert sorted_equal(data_items[3: len_-3], items)
+    items = np.asarray([i[0] for i in tree.all()])
 
-    items_rem = [to_dict(n) for n in items_removed]
-    assert sorted_equal(data_items[len_-3: 3], items_rem)
+    assert sorted_equal(data_array[3:], items)
+    assert sorted_equal(data_array[:3], items_removed)
 
 
 def test_remove_nothing():
@@ -351,8 +299,13 @@ def test_remove_nothing():
     tree1.load(data_array)
     tree2 = RBush()
     tree2.load(data_array)
+
     tree2.remove(13, 13, 13, 13)
-    assert tree1.to_json() == tree2.to_json()
+
+    items1 = np.asarray([i[0] for i in tree1.all()])
+    items2 = np.asarray([i[0] for i in tree2.all()])
+
+    assert sorted_equal(items1, items2)
 
 
 # remove brings the tree to a clear state when removing everything one by one
@@ -376,23 +329,31 @@ def test_clear_tree():
     assert tree.to_json() == RBush(4).to_json()
 
 
-# should have chainable api
 def test_chain():
     tree = RBush()
-    tree.load(data_array).insert(*data_array[0]).remove(*data_array[0])
-    items = [to_dict(n) for n in tree.all()]
-    assert sorted_equal(items, data_items)
+    new_data = [7, 13, 21, 17]
+
+    tree.load(data_array).insert(*new_data).remove(*new_data)
+
+    items = np.asarray([i[0] for i in tree.all()])
+    assert sorted_equal(data_array, items)
 
 
-def test_tree_data():
-    data = data_array
-    t = RBush()
-    t.load(data)
-    bboxes = np.asarray([[i.xmin, i.ymin, i.xmax, i.ymax] for i in t.all()])
-    ad = np.asarray([data.min(axis=0),data.max(axis=0),data.mean(axis=0)], int)
-    ab = np.asarray([bboxes.min(axis=0),bboxes.max(axis=0),bboxes.mean(axis=0)], int)
-    assert np.array_equal(ad,ab)
+# # collides returns true when search finds matching points'
+# def test_find_collision():
+#     tree = RBush(4)
+#     tree.load(data)
+#     result = tree.collides({'xmin': 40, 'ymin': 20, 'xmax': 80, 'ymax': 70})
+#     assert result
 
+# # collides returns false if nothing found
+# def test_find_no_collision():
+#     tree = RBush(4)
+#     tree.load(data)
+#     # result = tree.collides([200, 200, 210, 210])
+#     result = tree.collides(arr_to_bbox([200, 200, 210, 210]))
+#
+#     assert not result
 
 # t('constructor accepts a format argument to customize the data format',
 # def test_format_argument():
