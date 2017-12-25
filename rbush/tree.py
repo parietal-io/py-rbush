@@ -38,7 +38,7 @@ def remove_item(node, bbox, is_equal):
     return items
 
 
-#@profile
+@profile
 def insert(root, xmin, ymin, xmax, ymax, data,
            maxentries, minentries):
     """
@@ -50,7 +50,7 @@ def insert(root, xmin, ymin, xmax, ymax, data,
     return root
 
 
-#@profile
+@profile
 def insert_node(root, item, maxentries, minentries):
     """
     Insert node 'item' accordingly in 'root' node (tree)
@@ -77,7 +77,7 @@ def insert_node(root, item, maxentries, minentries):
     return root
 
 
-# @profile
+@profile
 def choose_subtree(node, bbox, level, path):
     '''
     Return node closets to 'bbox', fill 'path' with nodes visited
@@ -115,7 +115,7 @@ def choose_subtree(node, bbox, level, path):
     return node
 
 
-# @profile
+@profile
 def balance_nodes(path, maxentries, minentries):
     root = get(path, 0)
     for level in range(len(path)-1, -1, -1):
@@ -145,11 +145,12 @@ def balance_nodes(path, maxentries, minentries):
     return root
 
 
-# @profile
+@profile
 def search(node, xmin, ymin, xmax, ymax):
-    bbox = create_node(xmin, ymin, xmax, ymax)
+    bbox = create_bbox(xmin, ymin, xmax, ymax)
     nodes = search_node(node, bbox)
-    return np.asarray([[n.xmin, n.ymin, n.xmax, n.ymax] for n in nodes])
+    # return np.asarray([[n.xmin, n.ymin, n.xmax, n.ymax] for n in nodes])
+    return nodes
 
 @profile
 def search_node(node, bbox):
@@ -161,32 +162,41 @@ def search_node(node, bbox):
     if contains(bbox, node):
         items.extend(retrieve_all_items(node))
         return items
-    if node.children is None:
+    if childrenf(node) is None:
         items.append(node)
     else:
-        n_items = len(node.children)
+        n_items = len(childrenf(node))
         for i in range(n_items):
-            child = get(node.children, i)
+            child = get(childrenf(node), i)
             items.extend(search_node(child, bbox))
     return items
 
 
+def leaff(node):
+    return node[2]
+
+
+@profile
 def retrieve_all_items(node):
     items = list()
-    if node.children is None:
+    if childrenf(node) is None:
         items.append(node)
         return items
-    n_items = len(node.children)
+    n_items = len(childrenf(node))
     for i in range(n_items):
-        item = get(node.children, i)
-        if node.leaf:
+        item = get(childrenf(node), i)
+        if leaff(node):
             items.append(item)
         else:
             items.extend(retrieve_all_items(item))
     return items
 
 
-# @profile
+def childrenf(node):
+    return node[1]
+
+
+@profile
 def load(root, data, maxentries, minentries):
     """
     Bulk insertion of items from 'data'
@@ -208,7 +218,7 @@ def load(root, data, maxentries, minentries):
     # from scratch using OMT algorithm
     node = build_tree(data, 0, len(data)-1, maxentries, minentries)
 
-    if not len(root.children):
+    if not len(childrenf(root)):
         # save as is if tree is empty
         root = node
     elif (root.height == node.height):
@@ -217,8 +227,7 @@ def load(root, data, maxentries, minentries):
         children.append(root)
         children.append(node)
         bbox = calc_bbox_children(children)
-        root = create_node(bbox[0], bbox[1], bbox[2], bbox[3],
-                           children=children, leaf=False, height=node.height+1)
+        root = create_node(bbox, children=children, leaf=False, height=node.height+1)
     else:
         if root.height < node.height:
             # swap trees if inserted one is bigger
@@ -231,7 +240,11 @@ def load(root, data, maxentries, minentries):
     return root
 
 
-#@profile
+def create_item(bbox, data=None):
+    return (bbox, data)
+
+
+@profile
 def build_tree(data, first, last, maxentries, minentries, height=None):
     """
     Build RBush from 'data' items between 'first','last' (inclusive)
@@ -242,11 +255,11 @@ def build_tree(data, first, last, maxentries, minentries, height=None):
     if N <= M:
         children = list()
         for i in range(first, last+1):
-            _node = create_node(data[i][0], data[i][1], data[i][2], data[i][3])
-            children.append(_node)
+            children.append(create_item(data[i]))
+            # _node = create_node(data[i][0], data[i][1], data[i][2], data[i][3])
+            # children.append(_node)
         bbox = calc_bbox_children(children)
-        node = create_node(bbox[0], bbox[1], bbox[2], bbox[3],
-                           children=children, leaf=True, height=1)
+        node = create_node(bbox, children=children, leaf=True, height=1)
         return node
 
     if height is None:
@@ -274,12 +287,11 @@ def build_tree(data, first, last, maxentries, minentries, height=None):
                                        maxentries=maxentries,
                                        minentries=minentries))
     bbox = calc_bbox_children(children)
-    node = create_node(bbox[0], bbox[1], bbox[2], bbox[3],
-                       leaf=False, height=height, children=children)
+    node = create_node(bbox, leaf=False, height=height, children=children)
     return node
 
 
-#@profile
+@profile
 def multiselect(data, first, last, n, column):
     stack = [first, last]
     mid = None
@@ -293,7 +305,7 @@ def multiselect(data, first, last, n, column):
         stack.extend([first, mid, mid, last])
 
 
-#@profile
+@profile
 def quicksort(data, first, last, column):
     idx = np.argsort(data[first:last, column], kind='quicksort')
     idx += first

@@ -42,11 +42,10 @@ class RBush(object):
 
     def insert(self, xmin, ymin, xmax, ymax, data=None):
         """
-        Insert element(s) in the tree
+        Insert element(s)
 
-        'xmin,ymin,xmax,ymax' (and data) may be arrays, if so, `RBush.load`
-        function is used instead. As in `RBush.load`, if 'data' is given it
-        must be an array with length equal to 'xmin,ymin,xmax,ymax'.
+        'xmin,ymin,xmax,ymax' may be arrays either numpy arrays (same size N),
+        or scalars (to insert one item)
 
         Input:
          - xmin : scalar or array-like
@@ -77,7 +76,7 @@ class RBush(object):
             msg = ("Error: Arguments 'xmin','ymin','xmax','ymax','data'"
                    "have different lengths")
             print(msg)
-            return root
+            return self
 
         root = insert(self._root, xmin, ymin, xmax, ymax, data,
                       maxentries=self.maxentries, minentries=self.minentries)
@@ -95,8 +94,8 @@ class RBush(object):
         If 'data' is given, it is expected to be an array with N elements
 
         Input:
-         - arr  : numerical array-like of shape (N,4)
-         - data : array-like of shape (N,)
+         - arr  : numpy.ndarray of shape (N,4)
+         - data : numpy.ndarray of shape (N,)
 
         Output:
          - self : RBush
@@ -109,7 +108,7 @@ class RBush(object):
             print(msg)
             return self
 
-        arr = np.asarray(arr)
+        assert isinstance(arr, np.ndarray)
 
         ncols = arr.shape[1]
         if ncols < 4:
@@ -117,12 +116,12 @@ class RBush(object):
             print(msg)
             return self
 
-        if data is not None:
-            arr = np.concatenate([arr[:, :4], data], axis=1)
-        else:
-            if ncols == 4:
-                data = np.empty((len(arr), 1), dtype=object)
-                arr = np.concatenate([arr, data], axis=1)
+        # if data is not None:
+        #     arr = np.concatenate([arr[:, :4], data], axis=1)
+        # else:
+        #     if ncols == 4:
+        #         data = np.empty((len(arr), 1), dtype=object)
+        #         arr = np.concatenate([arr, data], axis=1)
 
         root = load(self._root, arr,
                     maxentries=self.maxentries, minentries=self.minentries)

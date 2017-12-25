@@ -4,7 +4,8 @@ INF = np.iinfo(np.int64).max
 
 def create_root():
     children = list()
-    return create_node(leaf=True, height=1, children=children)
+    bbox = np.array([INF, INF, -INF, -INF])
+    return create_node(bbox, leaf=True, height=1, children=children)
 
 
 def get(children, index):
@@ -15,17 +16,27 @@ def get(children, index):
     return child
 
 
-from collections import namedtuple
-RBushNode = namedtuple('RBushNode',
-                       ['xmin', 'ymin', 'xmax', 'ymax',
-                        'data', 'leaf', 'height', 'children'])
+# from collections import namedtuple
+# RBushNode = namedtuple('RBushNode', ['bbox', 'leaf', 'height', 'children'])
 
+def create_bbox(xmin, ymin, xmax, ymax):
+    return (xmin, ymin, xmax, ymax)
+
+def create_node(bbox, leaf=None, height=None, children=None):
+    return (bbox, children, leaf, height)
+
+
+# from collections import namedtuple
+# RBushNode = namedtuple('RBushNode',
+#                        ['xmin', 'ymin', 'xmax', 'ymax',
+#                         'data', 'leaf', 'height', 'children'])
 
 #@profile
-def create_node(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
-                data=None, leaf=None, height=None, children=None):
-    node = RBushNode(xmin, ymin, xmax, ymax, data, leaf, height, children)
-    return node
+# def create_node(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,
+#                 data=None, leaf=None, height=None, children=None):
+#     node = RBushNode(xmin, ymin, xmax, ymax, data, leaf, height, children)
+#     return node
+
 
 # @profile
 # def create_node(xmin=INF, ymin=INF, xmax=-INF, ymax=-INF,

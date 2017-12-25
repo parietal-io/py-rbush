@@ -18,10 +18,23 @@ def min(x, y):
     return y
 
 
+def xminf(node):
+    return node[0][0]
+
+def yminf(node):
+    return node[0][1]
+
+def xmaxf(node):
+    return node[0][2]
+
+def ymaxf(node):
+    return node[0][3]
+
+
 #@profile
 def calc_enlarged_area(a, b):
-    return _calc_enlarged_area(a.xmin, a.ymin, a.xmax, a.ymax,
-                               b.xmin, b.ymin, b.xmax, b.ymax)
+    return _calc_enlarged_area(xminf(a), yminf(a), xmaxf(a), ymaxf(a),
+                               xminf(b), yminf(b), xmaxf(b), ymaxf(b))
 
 # @nb.njit
 def _calc_enlarged_area(axmin, aymin, axmax, aymax,
@@ -36,8 +49,8 @@ def extend(a, b):
     """
     Return 'a' box enlarged by 'b'
     """
-    xmin, ymin, xmax, ymax = _extend(a.xmin, a.ymin, a.xmax, a.ymax,
-                                     b.xmin, b.ymin, b.xmax, b.ymax)
+    xmin, ymin, xmax, ymax = _extend(xminf(a), yminf(a), xmaxf(a), ymaxf(a),
+                                     xminf(b), yminf(b), xmaxf(b), ymaxf(b))
     # a.xmin = xmin
     # a.ymin = ymin
     # a.xmax = xmax
@@ -58,7 +71,7 @@ def _extend(axmin, aymin, axmax, aymax,
 
 
 def calc_bbox_margin(bbox):
-    return (bbox.xmax - bbox.xmin) + (bbox.ymax - bbox.ymin)
+    return (xmaxf(bbox) - xminf(bbox)) + (ymaxf(bbox) - yminf(bbox))
 
 
 #@profile
@@ -74,12 +87,12 @@ def calc_dist_ymargin(node, minentries):
 
 
 def sort_xmargin(node):
-    node.children.sort(key=lambda a: a.xmin)
+    node.children.sort(key=lambda a: xminf(a))
     return node
 
 
 def sort_ymargin(node):
-    node.children.sort(key=lambda a: a.ymin)
+    node.children.sort(key=lambda a: yminf(a))
     return node
 
 
@@ -124,10 +137,10 @@ def calc_bbox_children_indexes(children, i_ini, i_fin):
     ymax = -INF
     for i in range(i_ini, i_fin):
         child = get(children, i)
-        xmin = min(xmin, child.xmin)
-        ymin = min(ymin, child.ymin)
-        xmax = max(xmax, child.xmax)
-        ymax = max(ymax, child.ymax)
+        xmin = min(xmin, xminf(child))
+        ymin = min(ymin, yminf(child))
+        xmax = max(xmax, xmaxf(child))
+        ymax = max(ymax, ymaxf(child))
     return (xmin, ymin, xmax, ymax)
 
 
@@ -166,7 +179,7 @@ def adjust_bboxes(bbox, path):
 def substitute(parent, old_child, new_child):
     parent.children.remove(old_child)
     parent.children.append(new_child)
-    
+
 
 #@profile
 def split(node, minentries):
@@ -244,10 +257,10 @@ def splice(items, index, num_items):
 
 
 def calc_intersection_area(a, b):
-    xmin = max(a.xmin, b.xmin)
-    ymin = max(a.ymin, b.ymin)
-    xmax = min(a.xmax, b.xmax)
-    ymax = min(a.ymax, b.ymax)
+    xmin = max(xminf(a), xminf(b))
+    ymin = max(yminf(a), yminf(b))
+    xmax = min(xmaxf(a), xmaxf(b))
+    ymax = min(ymaxf(a), ymaxf(b))
     return max(0, xmax - xmin) * max(0, ymax - ymin)
 
 
@@ -255,16 +268,16 @@ def contains(bbox, node):
     """
     Return True if 'bbox' contains 'node'
     """
-    bbox_lower_node = bbox.xmin <= node.xmin and bbox.ymin <= node.ymin
-    bbox_upper_node = node.xmax <= bbox.xmax and node.ymax <= bbox.ymax
+    bbox_lower_node = bbox[0] <= xminf(node) and bbox[1] <= yminf(node)
+    bbox_upper_node = xmaxf(node) <= bbox[2] and ymaxf(node) <= bbox[3]
     return bbox_lower_node and bbox_upper_node
 
 
 def intersects(bbox, node):
-    node_lower_bbox = node.xmin <= bbox.xmax and node.ymin <= bbox.ymax
-    node_upper_bbox = node.xmax >= bbox.xmin and node.ymax >= bbox.ymin
+    node_lower_bbox = xminf(node) <= bbox[2] and yminf(node) <= bbox[3]
+    node_upper_bbox = xmaxf(node) >= bbox[0] and ymaxf(node) >= bbox[1]
     return node_lower_bbox and node_upper_bbox
 
 
 def calc_bbox_area(a):
-    return (a.xmax - a.xmin) * (a.ymax - a.ymin)
+    return (xmaxf(a) - xminf(a)) * (ymaxf(a) - yminf(a))
