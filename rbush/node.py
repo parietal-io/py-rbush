@@ -1,7 +1,6 @@
-from .core import *
-
-
 import numba as nb
+
+from ._python import *
 
 
 @nb.njit(["int64(int64,int64)", "float64(float64,float64)"])
@@ -21,29 +20,36 @@ def min(x, y):
 def xminf(node):
     return node[0][0]
 
+
 def yminf(node):
     return node[0][1]
+
 
 def xmaxf(node):
     return node[0][2]
 
+
 def ymaxf(node):
     return node[0][3]
+
 
 def leaff(node):
     return node[2]
 
+
 def childrenf(node):
     return node[1]
+
 
 def heightf(node):
     return node[-1]
 
 
-#@profile
+# @profile
 def calc_enlarged_area(a, b):
     return _calc_enlarged_area(xminf(a), yminf(a), xmaxf(a), ymaxf(a),
                                xminf(b), yminf(b), xmaxf(b), ymaxf(b))
+
 
 # @nb.njit
 def _calc_enlarged_area(axmin, aymin, axmax, aymax,
@@ -53,7 +59,7 @@ def _calc_enlarged_area(axmin, aymin, axmax, aymax,
     return sectx * secty
 
 
-#@profile
+# @profile
 def extend(a, b):
     """
     Return 'a' box enlarged by 'b'
@@ -63,6 +69,7 @@ def extend(a, b):
     a = create_node([xmin, ymin, xmax, ymax],
                     leaf=leaff(a), height=heightf(a), children=childrenf(a))
     return a
+
 
 # @nb.njit
 def _extend(axmin, aymin, axmax, aymax,
@@ -78,13 +85,13 @@ def calc_bbox_margin(bbox):
     return (xmaxf(bbox) - xminf(bbox)) + (ymaxf(bbox) - yminf(bbox))
 
 
-#@profile
+# @profile
 def calc_dist_xmargin(node, minentries):
     sort_xmargin(node)
     return calc_dist_margin(node, minentries)
 
 
-#@profile
+# @profile
 def calc_dist_ymargin(node, minentries):
     sort_ymargin(node)
     return calc_dist_margin(node, minentries)
@@ -100,7 +107,7 @@ def sort_ymargin(node):
     return node
 
 
-#@profile
+# @profile
 def calc_dist_margin(node, minentries):
     M = len(childrenf(node))
     m = minentries
@@ -183,7 +190,7 @@ def substitute(parent, old_child, new_child):
     childrenf(parent).append(new_child)
 
 
-#@profile
+# @profile
 def split(node, minentries):
     sort_splitaxis(node, minentries)
     index = choose_splitindex(node, minentries)
@@ -193,15 +200,16 @@ def split(node, minentries):
     num_children = len(childrenf(node)) - index
     adopted = splice(childrenf(node), index, num_children)
     bbox = calc_bbox_children(adopted)
-    new_node = create_node(bbox, height=heightf(node), leaf=leaff(node), children=adopted)
+    new_node = create_node(bbox, height=heightf(node),
+                           leaf=leaff(node), children=adopted)
 
     # Update the sizes (limits) of each box
     node = adjust_bbox(node)
 
-    return node,new_node
+    return node, new_node
 
 
-#@profile
+# @profile
 def sort_splitaxis(node, minentries):
     xmargin = calc_dist_xmargin(node, minentries)
     ymargin = calc_dist_ymargin(node, minentries)
@@ -210,7 +218,7 @@ def sort_splitaxis(node, minentries):
     return node
 
 
-#@profile
+# @profile
 def choose_splitindex(node, minentries):
     '''
     Return the index (children) where to split

@@ -1,8 +1,8 @@
-from .node import *
-from copy import copy
 import math
-
 import numpy as np
+
+from .node import *
+
 
 
 def remove(root, xmin, ymin, xmax, ymax):

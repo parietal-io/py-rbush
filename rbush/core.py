@@ -1,6 +1,4 @@
 from ._utils import RBJSONEncoder as _jsenc
-from ._python import *
-# from ._numba import *
 from .tree import *
 
 MAXENTRIES = 9
@@ -136,13 +134,15 @@ class RBush(object):
         """
         Return a list of all items (leaves) from RBush
         """
-        return retrieve_all_items(self._root)
+        items = retrieve_all_items(self._root)
+        return map(np.asarray, zip(*items))
 
     def search(self, xmin, ymin, xmax, ymax):
         """
         Return items contained by or intersecting with 'xmin,ymin,xmax,ymax'
         """
-        return search(self._root, xmin, ymin, xmax, ymax)
+        items = search(self._root, xmin, ymin, xmax, ymax)
+        return map(np.asarray, zip(*items))
 
     def remove(self, xmin, ymin, xmax, ymax):
         """
