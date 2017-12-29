@@ -7,7 +7,8 @@ from .node import *
 
 def remove(root, xmin, ymin, xmax, ymax):
     bbox = (xmin, ymin, xmax, ymax)
-    return remove_item(root, bbox, lambda bbox,node:bbox[0]==xminf(node))
+    # return remove_item(root, bbox, lambda bbox,node:bbox[0]==xminf(node))
+    return remove_item(root, bbox, intersects)
 
 
 def remove_item(node, bbox, is_equal):
