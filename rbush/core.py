@@ -99,21 +99,20 @@ class RBush(object):
          - self : RBush
         """
         if arr is None or len(arr) == 0:
-            return self
+            raise ValueError('Array must be non-zero length')
 
         if data is not None and len(data) != len(arr):
             msg = ("Error: Arguments 'arr','data' have different lengths")
-            print(msg)
-            return self
+            raise ValueError(msg)
 
-        msg = "expected a numpy.ndarray, instead {} was given".format(type(arr))
-        assert isinstance(arr, np.ndarray), msg
+        if not isinstance(arr, np.ndarray):
+            msg = "expected a numpy.ndarray, instead {} was given".format(type(arr))
+            raise ValueError(msg)
 
         ncols = arr.shape[1]
         if ncols < 4:
             msg = ("Error: 'arr' shape mismatch, was expecting 4 coluns")
-            print(msg)
-            return self
+            raise ValueError(msg)
 
         root = load(self._root, arr,
                     maxentries=self.maxentries, minentries=self.minentries)
