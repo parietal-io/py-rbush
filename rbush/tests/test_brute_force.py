@@ -20,11 +20,11 @@ def test_against_brute_force_numba():
     t2 = time()
     print('BRUTE FORCE;', len(c), 'time: {:.5f}'.format(t2 - t1))
 
-    c, d = b.search(*search_box)
+    c = b.search(*search_box)
     rbush_t1 = time()
-    c, d = b.search(*search_box)
-    c, d = b.search(*search_box)
-    c, d = b.search(*search_box)
+    c = b.search(*search_box)
+    c = b.search(*search_box)
+    c = b.search(*search_box)
     rbush_t2 = time()
     print('RBUSH;', len(c), 'time: {:.5f}'.format(rbush_t2 - rbush_t1))
     assert rbush_t2 - rbush_t1 < t2 - t1, 'Sorry not fast enough yet'

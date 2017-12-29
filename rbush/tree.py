@@ -3,8 +3,6 @@ import numpy as np
 
 from .node import *
 
-
-
 def remove(root, xmin, ymin, xmax, ymax):
     bbox = (xmin, ymin, xmax, ymax)
     # return remove_item(root, bbox, lambda bbox,node:bbox[0]==xminf(node))
@@ -144,45 +142,83 @@ def balance_nodes(path, maxentries, minentries):
 
 
 # @profile
-def search(node, xmin, ymin, xmax, ymax):
-    bbox = create_bbox(xmin, ymin, xmax, ymax)
-    nodes = search_node(node, bbox)
-    # return np.asarray([[n.xmin, n.ymin, n.xmax, n.ymax] for n in nodes])
-    return nodes
+import numba as nb
 
-# @profile
-def search_node(node, bbox):
-    items = list()
-    if node is None:
-        return items
-    if not intersects(bbox, node):
-        return items
-    if contains(bbox, node):
-        items.extend(retrieve_all_items(node))
-        return items
-    if childrenf(node) is None:
-        items.append(node)
-    else:
-        n_items = len(childrenf(node))
-        for i in range(n_items):
-            child = get(childrenf(node), i)
-            items.extend(search_node(child, bbox))
+@nb.jit
+def search(root_node, xmin, ymin, xmax, ymax):
+
+    if root_node is None:
+        raise ValueError('Root node must be non-null')
+
+    search_nodes = [root_node]
+    items = []
+    while len(search_nodes):
+
+        node = search_nodes.pop()
+
+        xminfv = node[0][0]
+        yminfv = node[0][1]
+        xmaxfv = node[0][2]
+        ymaxfv = node[0][3]
+
+        # intersects
+        node_lower_bbox = xminfv <= xmax and yminfv <= ymax
+        node_upper_bbox = xmaxfv >= xmin and ymaxfv >= ymin
+        does_intersect = node_lower_bbox and node_upper_bbox
+
+        if not does_intersect:
+            continue
+
+        # contains
+        bbox_lower_node = xmin <= xminfv and ymin <= yminfv
+        bbox_upper_node = xmaxfv <= xmax and ymaxfv <= ymax
+        does_contain = bbox_lower_node and bbox_upper_node
+
+        if not does_contain:
+            if len(node) == 2:
+                items.append(node[1])
+            else:
+                childrenfv = node[1]
+                n_items = len(childrenfv)
+                for i in range(n_items):
+                    child = childrenfv[i]
+                    search_nodes.append(child)
+
+        else:
+            nodes = [node]
+            while len(nodes):
+                anode = nodes.pop()
+                if len(anode) == 2:
+                    items.append(anode[1])
+                elif anode[2]:
+                    children = anode[1]
+                    for i in range(len(children)):
+                        items.append(children[i])
+                else:
+                    for cnode in range(len(anode[1])):
+                        nodes.append(cnode)
     return items
 
 
-# @profile
+@nb.jit
 def retrieve_all_items(node):
-    items = list()
-    if childrenf(node) is None:
-        items.append(node)
-        return items
-    n_items = len(childrenf(node))
-    for i in range(n_items):
-        item = get(childrenf(node), i)
-        if leaff(node):
-            items.append(item)
+    items = []
+    nodes = [node]
+
+    while len(nodes):
+        anode = nodes.pop()
+
+        if len(anode) == 2:
+            items.append(anode[1])
+
+        elif anode[2]:
+            children = anode[1]
+            for i in range(len(children)):
+                items.append(children[i])
         else:
-            items.extend(retrieve_all_items(item))
+            for cnode in range(len(anode[1])):
+                nodes.append(cnode)
+
     return items
 
 

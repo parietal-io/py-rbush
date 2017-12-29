@@ -1,14 +1,16 @@
+
 from ._utils import RBJSONEncoder as _jsenc
 from .tree import *
 
 MAXENTRIES = 9
 MINENTRIES = int(9*0.4)
 
-
 class RBush(object):
+
     def __init__(self, maxentries=None, minentries=None):
         self.maxentries = maxentries or MAXENTRIES
         self.minentries = minentries or MINENTRIES
+        self.data = None
         self.clear()
 
     def clear(self):
@@ -73,8 +75,7 @@ class RBush(object):
         if not len(xmin) == len(ymin) == len(xmax) == len(ymax) == len(data):
             msg = ("Error: Arguments 'xmin','ymin','xmax','ymax','data'"
                    "have different lengths")
-            print(msg)
-            return self
+            raise ValueError(msg)
 
         root = insert(self._root, xmin, ymin, xmax, ymax, data,
                       maxentries=self.maxentries, minentries=self.minentries)
@@ -105,6 +106,9 @@ class RBush(object):
             msg = ("Error: Arguments 'arr','data' have different lengths")
             raise ValueError(msg)
 
+        if not data:
+            data = np.arange(len(arr))
+
         if not isinstance(arr, np.ndarray):
             msg = "expected a numpy.ndarray, instead {} was given".format(type(arr))
             raise ValueError(msg)
@@ -114,9 +118,14 @@ class RBush(object):
             msg = ("Error: 'arr' shape mismatch, was expecting 4 coluns")
             raise ValueError(msg)
 
+        # change numba function to have "run_" prefix to set about self.load,
+        # folks are reading the api docs or code
         root = load(self._root, arr,
                     maxentries=self.maxentries, minentries=self.minentries)
+
         self._root = root
+        self.boxes = arr
+        self.data = data
         return self
 
     def load_dataframe(self, df):
@@ -134,14 +143,18 @@ class RBush(object):
         Return a list of all items (leaves) from RBush
         """
         items = retrieve_all_items(self._root)
+
+        # TODO: see if this can be refactored 
         return map(np.asarray, zip(*items))
 
     def search(self, xmin, ymin, xmax, ymax):
         """
         Return items contained by or intersecting with 'xmin,ymin,xmax,ymax'
         """
-        items = search(self._root, xmin, ymin, xmax, ymax)
-        return map(np.asarray, zip(*items))
+        # change numba function to have "run_" prefix to set about self.load,
+        # folks are reading the api docs or code
+        return search(self._root, xmin, ymin, xmax, ymax)
+
 
     def remove(self, xmin, ymin, xmax, ymax):
         """
