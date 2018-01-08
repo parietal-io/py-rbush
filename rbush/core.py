@@ -153,6 +153,7 @@ class RBush(object):
         """
         # change numba function to have "run_" prefix to set about self.load,
         # folks are reading the api docs or code
+        #print(search.inspect_types())
         return search(self._root, xmin, ymin, xmax, ymax)
 
 
