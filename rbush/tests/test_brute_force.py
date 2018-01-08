@@ -5,6 +5,7 @@ import numpy as np
 
 import numba as nb
 
+
 def test_against_brute_force_numba():
     b = RBush()
     data = generate_data_array(100000,10)
