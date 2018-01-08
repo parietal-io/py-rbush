@@ -1,4 +1,4 @@
-from rbush import RBush 
+from rbush import RBush
 from rbush.data import generate_data_array
 from time import time
 import numpy as np
@@ -38,8 +38,12 @@ def search_brute_force(data, boxes, xmin, ymin, xmax, ymax):
         rxmax = boxes[i][2]
         rymax = boxes[i][3]
 
-        # intersects 
+        # intersects
         if (rxmin <= xmax and rymin <= ymax) and (rxmax >= xmin and rymax >= ymin):
             final_result.append(data[i])
 
     return final_result
+
+
+if __name__ == '__main__':
+    test_against_brute_force_numba()
