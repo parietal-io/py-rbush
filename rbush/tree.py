@@ -143,6 +143,11 @@ def balance_nodes(path, maxentries, minentries):
 
 # @profile
 import numba as nb
+NULLVAL = -1
+
+@nb.njit('boolean(int64)')
+def check_item_data(ditem):
+    return ditem == NULLVAL
 
 @nb.jit
 def search(root_node, xmin, ymin, xmax, ymax):
@@ -176,7 +181,9 @@ def search(root_node, xmin, ymin, xmax, ymax):
 
         if not does_contain:
             if len(node) == 2:
-                items.append(node[1])
+                _data = node[1]
+                if check_item_data(_data):
+                    items.append(_data)
             else:
                 childrenfv = node[1]
                 n_items = len(childrenfv)
@@ -189,11 +196,16 @@ def search(root_node, xmin, ymin, xmax, ymax):
             while len(nodes):
                 anode = nodes.pop()
                 if len(anode) == 2:
-                    items.append(anode[1])
-                elif anode[2]:
+                    _data = anode[1]
+                    if check_item_data(_data):
+                        items.append(_data)
+                elif anode[2]:                  # leaf
                     children = anode[1]
                     for i in range(len(children)):
-                        items.append(children[i])
+                        child = children[i]
+                        _data = child[1]
+                        if check_item_data(_data):
+                            items.append(_data)
                 else:
                     for cnode in range(len(anode[1])):
                         nodes.append(cnode)
@@ -270,8 +282,8 @@ def load(root, data, maxentries, minentries):
     return root
 
 
-def create_item(bbox, data=None):
-    return (bbox, data)
+def create_item(bbox, data):
+    return (np.asarray(bbox, dtype=float), data)
 
 
 # @profile
@@ -283,12 +295,19 @@ def build_tree(data, first, last, maxentries, minentries, height=None):
     M = maxentries
 
     if N <= M:
-        children = list()
+        children = []
         for i in range(first, last+1):
-            children.append(create_item(data[i]))
+            children.append(create_item(data[i], i))
             # _node = create_node(data[i][0], data[i][1], data[i][2], data[i][3])
             # children.append(_node)
         bbox = calc_bbox_children(children)
+        
+        # Now we will fill the available space to MAXENTRIES will non-valid items
+        if len(children) < M:
+            null_value = -1
+            for i in range(M-len(children)):
+                children.append(create_item(bbox, null_value))
+        #
         node = create_node(bbox, children=children, leaf=True, height=1)
         return node
 
