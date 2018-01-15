@@ -1,0 +1,9 @@
+data/setup.py.i
+data/examples/util.py.i
+data/examples/visualizer.py.i
+data/test/test_api.py.i
+data/test/testutils.py.i
+data/examples/timings.py.i
+data/test/test_compare_native.py.i
+data/COPYING.i
+data/tinyr/tinyr.pyx.i
