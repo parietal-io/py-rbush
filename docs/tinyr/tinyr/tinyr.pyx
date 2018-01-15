@@ -202,8 +202,7 @@ cdef class _Node(object):
 
         target_area = least_enlargement = Dfloat_max
         records = [ir, None]
-        print('target area',target_area)
-        print('records',records)
+
         for current_record in self.records:
             current_area = area(current_record.coords)
 
@@ -211,7 +210,7 @@ cdef class _Node(object):
 
             common_boundaries(records, combined_rectangle)
             enlagrgement = area(combined_rectangle) - current_area
-            print('enlargment',enlagrgement)
+
             if enlagrgement < least_enlargement:
                 target = current_record
                 target_area = area(current_record.coords)
