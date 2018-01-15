@@ -515,7 +515,7 @@ cdef class RTree(object):
             L.records.append(r)
 
         L, LL = self._AdjustTree(L, LL)
-        print(L,self.root,LL)
+
         if LL != None:
             self.root = _Node(None)
             self.root.addChild(L)

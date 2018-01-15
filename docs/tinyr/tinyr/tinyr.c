@@ -7719,7 +7719,7 @@ static CYTHON_INLINE int __pyx_f_5tinyr_5RTree_insert_at_node(struct __pyx_obj_5
  *             L.records.append(r)
  * 
  *         L, LL = self._AdjustTree(L, LL)             # <<<<<<<<<<<<<<
- *         print(L,self.root,LL)
+ * 
  *         if LL != None:
  */
   __pyx_t_2 = __pyx_f_5tinyr_5RTree__AdjustTree(__pyx_v_self, __pyx_v_L, __pyx_v_LL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 517, __pyx_L1_error)
@@ -7758,30 +7758,9 @@ static CYTHON_INLINE int __pyx_f_5tinyr_5RTree_insert_at_node(struct __pyx_obj_5
   __Pyx_DECREF_SET(__pyx_v_LL, ((struct __pyx_obj_5tinyr__Node *)__pyx_t_5));
   __pyx_t_5 = 0;
 
-  /* "tinyr.pyx":518
- * 
- *         L, LL = self._AdjustTree(L, LL)
- *         print(L,self.root,LL)             # <<<<<<<<<<<<<<
- *         if LL != None:
- *             self.root = _Node(None)
- */
-  __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 518, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_INCREF(((PyObject *)__pyx_v_L));
-  __Pyx_GIVEREF(((PyObject *)__pyx_v_L));
-  PyTuple_SET_ITEM(__pyx_t_2, 0, ((PyObject *)__pyx_v_L));
-  __Pyx_INCREF(((PyObject *)__pyx_v_self->root));
-  __Pyx_GIVEREF(((PyObject *)__pyx_v_self->root));
-  PyTuple_SET_ITEM(__pyx_t_2, 1, ((PyObject *)__pyx_v_self->root));
-  __Pyx_INCREF(((PyObject *)__pyx_v_LL));
-  __Pyx_GIVEREF(((PyObject *)__pyx_v_LL));
-  PyTuple_SET_ITEM(__pyx_t_2, 2, ((PyObject *)__pyx_v_LL));
-  if (__Pyx_PrintOne(0, __pyx_t_2) < 0) __PYX_ERR(0, 518, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
   /* "tinyr.pyx":519
  *         L, LL = self._AdjustTree(L, LL)
- *         print(L,self.root,LL)
+ * 
  *         if LL != None:             # <<<<<<<<<<<<<<
  *             self.root = _Node(None)
  *             self.root.addChild(L)
@@ -7792,7 +7771,7 @@ static CYTHON_INLINE int __pyx_f_5tinyr_5RTree_insert_at_node(struct __pyx_obj_5
   if (__pyx_t_1) {
 
     /* "tinyr.pyx":520
- *         print(L,self.root,LL)
+ * 
  *         if LL != None:
  *             self.root = _Node(None)             # <<<<<<<<<<<<<<
  *             self.root.addChild(L)
@@ -7835,7 +7814,7 @@ static CYTHON_INLINE int __pyx_f_5tinyr_5RTree_insert_at_node(struct __pyx_obj_5
 
     /* "tinyr.pyx":519
  *         L, LL = self._AdjustTree(L, LL)
- *         print(L,self.root,LL)
+ * 
  *         if LL != None:             # <<<<<<<<<<<<<<
  *             self.root = _Node(None)
  *             self.root.addChild(L)
@@ -20729,7 +20708,7 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__7);
 
   /* "tinyr.pyx":520
- *         print(L,self.root,LL)
+ * 
  *         if LL != None:
  *             self.root = _Node(None)             # <<<<<<<<<<<<<<
  *             self.root.addChild(L)
