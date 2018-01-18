@@ -1,4 +1,4 @@
-This library is extremely alpha.  DO NOT USE for anything besides test / dev.
+This library is extremely alpha.  DO NOT USE for anything besides test / dev. We are still optimizing the library...so hold off for now.
 -------
 
 # Mission
