@@ -2,11 +2,11 @@ import numpy as np
 
 
 def generate_numpy_data(n=1000, size=50):
-    from numpy.random import randn
+    from numpy.random import randn,random
     xmin = randn(n) * size
     ymin = randn(n) * size
-    xmax = xmin + (size * randn(n))
-    ymax = ymin + (size * randn(n))
+    xmax = np.abs(xmin) + random(n)
+    ymax = np.abs(ymin) + random(n)
     return {'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax}
 
 
