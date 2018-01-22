@@ -1,4 +1,4 @@
-# from ._utils import RBJSONEncoder as _jsenc
+from ._utils import RBJSONEncoder as _jsenc
 # from .tree import *
 import pyximport
 pyximport.install()
@@ -82,6 +82,9 @@ class RBush(object):
         #     print(msg)
         #     return self
 
+        if xmin > xmax or ymin > ymax:
+            raise ValueError("'xmin,ymin' must be less-or-equal to 'xmax,ymax'")
+
         box = (xmin, ymin, xmax, ymax)
         root = insert(self._root, box, data,
                       self.maxentries, self.minentries)
@@ -146,31 +149,31 @@ class RBush(object):
         items = search(self._root, (xmin, ymin, xmax, ymax))
         return items
 
-#     def to_json(self, indent=2):
-#         return to_json(self._root, indent)
-#
-#
-# def to_json(node, indent=None):
-#     cont = to_dict(node)
-#     import json
-#     return json.dumps(cont, indent=indent, cls=_jsenc)
-#
-#
-# def to_dict(node):
-#     content = dict(xmin=xminf(node),
-#                    ymin=yminf(node),
-#                    xmax=xmaxf(node),
-#                    ymax=ymaxf(node))
-#     content['leaf'] = leaff(node)
-#     content['height'] = heightf(node)
-#     children = []
-#     if leaff(node) is False:
-#         for i in range(len(childrenf(node))):
-#             child = get(childrenf(node), i)
-#             children.append(to_dict(child))
-#     else:
-#         for i in range(len(childrenf(node))):
-#             child = get(childrenf(node), i)
-#             children.append(child)
-#     content['children'] = children
-#     return content
+    def to_json(self, indent=2):
+        return to_json(self._root, indent)
+
+
+def to_json(node, indent=None):
+    cont = node.to_dict()
+    import json
+    return json.dumps(cont, indent=indent, cls=_jsenc)
+
+
+#def to_dict(node):
+#    content = dict(xmin=xminf(node),
+#                   ymin=yminf(node),
+#                   xmax=xmaxf(node),
+#                   ymax=ymaxf(node))
+#    content['leaf'] = leaff(node)
+#    content['height'] = heightf(node)
+#    children = []
+#    if leaff(node) is False:
+#        for i in range(len(childrenf(node))):
+#            child = get(childrenf(node), i)
+#            children.append(to_dict(child))
+#    else:
+#        for i in range(len(childrenf(node))):
+#            child = get(childrenf(node), i)
+#            children.append(child)
+#    content['children'] = children
+#    return content

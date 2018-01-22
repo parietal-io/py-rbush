@@ -76,6 +76,16 @@ cdef class _Node(object):
         node.common_boundaries(ir.coords)
         self.records.append(ir)
 
+    def __str__(self):
+        return str(self.to_dict())
+
+    def to_dict(self):
+        content = dict(is_leaf=self.is_leaf)
+        records = list()
+        for r in self.records:
+            records.append(r.to_dict())
+        content['records'] = records
+        return content
 
 cdef class _Record:
     cdef:
@@ -107,6 +117,10 @@ cdef class _ChildRecord(_Record):
         self.copy_coords_to(ret.coords)
         return ret
 
+    def to_dict(self):
+        content = dict(identifier=self.identifier, coords=self.coords)
+        return content
+
 cdef class _InnerRecord(_Record):
     cdef:
         _Node child
@@ -121,6 +135,11 @@ cdef class _InnerRecord(_Record):
         ret = _InnerRecord(self.child.copy(newparent))
         self.copy_coords_to(ret.coords)
         return ret
+
+    def to_dict(self):
+        content = dict(coords=self.coords)
+        content['child'] = self.child.to_dict()
+        return content
 
 # cdef class RTree
 
@@ -464,7 +483,7 @@ cdef list find_overlapping_leafs(_Node root, Dfloat *coords):
 cdef void tuple_to_array(object t, Dfloat *coords):
     for i in range(4):
         coords[i] = <Dfloat>t[i]
-    make_order(coords)
+    #make_order(coords)
 
 cdef inline void make_order(Dfloat *coords):
     cdef Dfloat switch
