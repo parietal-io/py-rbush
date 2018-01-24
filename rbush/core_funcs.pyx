@@ -1,4 +1,5 @@
 # cython: linetrace=True
+# cython: binding=True
 
 cimport cython
 
