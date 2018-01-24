@@ -1,3 +1,7 @@
+# cython: linetrace=True
+
+cimport cython
+
 import itertools
 
 from libc.float cimport DBL_MAX as Dfloat_max, DBL_MIN as Dfloat_min
@@ -150,6 +154,8 @@ def create_root():
     root.is_leaf = True
     return root
 
+
+@cython.profile(False)
 def insert(_Node root, object coords, object key, int M_Cap, int m_cap):
     '''Insert an item.
 
@@ -180,6 +186,7 @@ def insert(_Node root, object coords, object key, int M_Cap, int m_cap):
     return root
 
 
+@cython.profile(False)
 cdef inline _Node _ChooseLeaf(_Node root, _Record ir):
     cdef:
         _Node N
@@ -224,6 +231,8 @@ cdef inline _Record choose_subtree_least_enlargement(_Node anode, _Record ir):
 
     return target
 
+
+@cython.profile(False)
 cdef inline _Node insert_at_node(_Record r, _Node L, int M_cap, int m_cap):
     cdef:
         _Node LL
@@ -259,6 +268,7 @@ cdef inline _InnerRecord parent_record(_Node node):
 cdef inline bint is_full(int M_cap, _Node node):
     return len(node.records) == M_cap
 
+@cython.profile(False)
 cdef inline tuple _AdjustTree(_Node L, _Node LL, int M_cap, int m_cap):
     cdef:
         _Node N, NN, P
@@ -290,6 +300,7 @@ cdef inline tuple _AdjustTree(_Node L, _Node LL, int M_cap, int m_cap):
 
     return (N, NN)
 
+@cython.profile(False)
 cdef _Node SplitNode(_Node node, _Record ir, int m_cap):
     cdef:
         list remaining
