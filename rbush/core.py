@@ -1,11 +1,19 @@
-from ._utils import RBJSONEncoder as _jsenc
-# from .tree import *
+import numpy as np
 import pyximport
-pyximport.install()
+pyximport.install(setup_args={'include_dirs': np.get_include()})
+# pyximport.install()
 
-from rbush.core_funcs import (create_root,
-                              insert,
-                              search)
+#from rbush.core_cython import (create_root,
+#                               insert,
+#                               search)
+
+from rbush.core_common import create_root
+from rbush.core_insert import load
+from rbush.core_search import search
+
+
+# from ._utils import RBJSONEncoder as _jsenc
+# from .tree import *
 
 MAXENTRIES = 9
 MINENTRIES = int(9*0.4)
@@ -61,80 +69,69 @@ class RBush(object):
         Output:
          - self : RBush
         """
-        # try:
-        #     len(xmin)
-        #     len(ymin)
-        #     len(xmax)
-        #     len(ymax)
-        # except TypeError as e:
-        #     # not iterable
-        #     xmin = [xmin]
-        #     ymin = [ymin]
-        #     xmax = [xmax]
-        #     ymax = [ymax]
+        try:
+            len(xmin)
+            len(ymin)
+            len(xmax)
+            len(ymax)
+        except TypeError as e:
+            # not iterable
+            xmin = [xmin]
+            ymin = [ymin]
+            xmax = [xmax]
+            ymax = [ymax]
 
-        # if data is None:
-        #     data = [None]*len(xmin)
+        if data is None:
+            data = [None]*len(xmin)
 
-        # if not len(xmin) == len(ymin) == len(xmax) == len(ymax) == len(data):
-        #     msg = ("Error: Arguments 'xmin','ymin','xmax','ymax','data'"
-        #            "have different lengths")
-        #     print(msg)
-        #     return self
+        if not len(xmin) == len(ymin) == len(xmax) == len(ymax) == len(data):
+            msg = ("Error: Arguments 'xmin','ymin','xmax','ymax','data'"
+                   "have different lengths")
+            print(msg)
+            return self
 
-        if xmin > xmax or ymin > ymax:
-            raise ValueError("'xmin,ymin' must be less-or-equal to 'xmax,ymax'")
-
-        box = (xmin, ymin, xmax, ymax)
-        root = insert(self._root, box, data,
-                      self.maxentries, self.minentries)
+        root = self.load(np.array([xmin, ymin, xmax, ymax]).T, data)
         self._root = root
         return self
 
     def load(self, arr, data=None):
-        import numpy as np
-        for i, a in enumerate(arr):
-            self.insert(*a, i)
-        self.data = np.arange(len(arr))
-        self.boxes = arr
-    # def load(self, arr, data=None):
-    #     """
-    #     Load 'arr' array into tree
-    #
-    #     'arr' array  may be either a numpy array of shape (N,4), numpy record
-    #     array or pandas dataframe with columns 'xmin,ymin,xmax,ymax', or
-    #     a list of lists (internal lists being 4 elements long).
-    #
-    #     If 'data' is given, it is expected to be an array with N elements
-    #
-    #     Input:
-    #      - arr  : numpy.ndarray of shape (N,4)
-    #      - data : numpy.ndarray of shape (N,)
-    #
-    #     Output:
-    #      - self : RBush
-    #     """
-    #     if arr is None or len(arr) == 0:
-    #         raise ValueError('Array must be non-zero length')
-    #
-    #     if data is not None and len(data) != len(arr):
-    #         msg = ("Error: Arguments 'arr','data' have different lengths")
-    #         raise ValueError(msg)
-    #
-    #     if not isinstance(arr, np.ndarray):
-    #         msg = "expected a numpy.ndarray, instead {} was given".format(type(arr))
-    #         raise ValueError(msg)
-    #
-    #     ncols = arr.shape[1]
-    #     if ncols < 4:
-    #         msg = ("Error: 'arr' shape mismatch, was expecting 4 coluns")
-    #         raise ValueError(msg)
-    #
-    #     root = load(self._root, arr,
-    #                 maxentries=self.maxentries, minentries=self.minentries)
-    #     self._root = root
-    #     return self
-    #
+        """
+        Load 'arr' array into tree
+
+        'arr' array  may be either a numpy array of shape (N,4), numpy record
+        array or pandas dataframe with columns 'xmin,ymin,xmax,ymax', or
+        a list of lists (internal lists being 4 elements long).
+
+        If 'data' is given, it is expected to be an array with N elements
+
+        Input:
+         - arr  : numpy.ndarray of shape (N,4)
+         - data : numpy.ndarray of shape (N,)
+
+        Output:
+         - self : RBush
+        """
+        if arr is None or len(arr) == 0:
+            raise ValueError('Array must be non-zero length')
+
+        if data is not None and len(data) != len(arr):
+            msg = ("Error: Arguments 'arr','data' have different lengths")
+            raise ValueError(msg)
+
+        if not isinstance(arr, np.ndarray):
+            msg = "expected a numpy.ndarray, instead {} was given".format(type(arr))
+            raise ValueError(msg)
+
+        ncols = arr.shape[1]
+        if ncols < 4:
+            msg = ("Error: 'arr' shape mismatch, was expecting 4 coluns")
+            raise ValueError(msg)
+
+        root = load(self._root, arr,
+                    maxentries=self.maxentries, minentries=self.minentries)
+        self._root = root
+        return self
+
     # def all(self):
     #     """
     #     Return a list of all items (leaves) from RBush
@@ -149,14 +146,14 @@ class RBush(object):
         items = search(self._root, (xmin, ymin, xmax, ymax))
         return items
 
-    def to_json(self, indent=2):
-        return to_json(self._root, indent)
-
-
-def to_json(node, indent=None):
-    cont = node.to_dict()
-    import json
-    return json.dumps(cont, indent=indent, cls=_jsenc)
+#     def to_json(self, indent=2):
+#         return to_json(self._root, indent)
+#
+#
+# def to_json(node, indent=None):
+#     cont = node.to_dict()
+#     import json
+#     return json.dumps(cont, indent=indent, cls=_jsenc)
 
 
 #def to_dict(node):
