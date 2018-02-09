@@ -81,8 +81,10 @@ class RBush(object):
             xmax = [xmax]
             ymax = [ymax]
 
-        if data is None:
-            data = [None]*len(xmin)
+        try:
+            len(data)
+        except TypeError as e:
+            data = [data]*len(xmin)
 
         if not len(xmin) == len(ymin) == len(xmax) == len(ymax) == len(data):
             msg = ("Error: Arguments 'xmin','ymin','xmax','ymax','data'"
@@ -90,7 +92,9 @@ class RBush(object):
             print(msg)
             return self
 
-        root = self.load(np.array([xmin, ymin, xmax, ymax]).T, data)
+        arr = np.array([xmin, ymin, xmax, ymax]).T
+
+        root = self.load(arr, data)
         self._root = root
         return self
 
@@ -143,7 +147,8 @@ class RBush(object):
         """
         Return items contained by or intersecting with 'xmin,ymin,xmax,ymax'
         """
-        items = search(self._root, (xmin, ymin, xmax, ymax))
+        box = np.asarray([xmin, ymin, xmax, ymax], dtype=float)
+        items = search(self._root, box)
         return items
 
 #     def to_json(self, indent=2):

@@ -14,8 +14,8 @@ def search(tree, data):
 
 def insertion(tree, data):
     tic = time.time()
-    for item in data:
-        tree.insert(**item)
+    for i, item in enumerate(data):
+        tree.insert(*item, i)
     return time.time() - tic
 
 
@@ -50,7 +50,7 @@ def run(N_insert=None, N_remove=None, _load=None):
         tree = RBush(MAX_ENTRIES)
 
         # insertion
-        t_insertion = insertion(tree, data_items)
+        t_insertion = insertion(tree, data_array)
         print('{:d} insertions one-by-one: {:.5f}'.format(N_insert, t_insertion))
 
         # Search items 10%

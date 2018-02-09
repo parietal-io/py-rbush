@@ -47,13 +47,16 @@ def dataf(node):
     return node[1]
 
 
+#@nb.jit
 def childrenf(node):
     return node[1]
 
 
+#@nb.jit
 def leaff(node):
     return node[2]
 
 
+#@nb.jit
 def heightf(node):
     return node[3]
