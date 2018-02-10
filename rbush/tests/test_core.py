@@ -110,8 +110,8 @@ def test_load_insert():
 
 def test_data_load_empty():
     tree = RBush()
-    tree.load([])
-    assert tree.to_json() == RBush().to_json()
+    with pytest.raises(ValueError):
+        tree.load([])
 
 
 def test_data_load_empty_maxEntries():
