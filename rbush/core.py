@@ -1,19 +1,18 @@
 import numpy as np
 import pyximport
 pyximport.install(setup_args={'include_dirs': np.get_include()})
-# pyximport.install()
 
 #from rbush.core_cython import (create_root,
 #                               insert,
 #                               search)
 
 from rbush.core_common import create_root
-from rbush.core_insert import load
+from rbush.core_insert import load, insert
 from rbush.core_search import search
+from rbush.core_remove import remove
 
 
 # from ._utils import RBJSONEncoder as _jsenc
-# from .tree import *
 
 MAXENTRIES = 9
 MINENTRIES = int(9*0.4)
@@ -28,29 +27,29 @@ class RBush(object):
     def clear(self):
         self._root = create_root()
 
-    # @property
-    # def xmin(self):
-    #     return xminf(self._root)
-    #
-    # @property
-    # def ymin(self):
-    #     return yminf(self._root)
-    #
-    # @property
-    # def xmax(self):
-    #     return xmaxf(self._root)
-    #
-    # @property
-    # def ymax(self):
-    #     return ymaxf(self._root)
-    #
-    # @property
-    # def height(self):
-    #     return heightf(self._root)
-    #
-    # @property
-    # def empty(self):
-    #     return len(childrenf(self._root)) == 0
+    @property
+    def xmin(self):
+        return self._root[0][0]
+
+    @property
+    def ymin(self):
+        return self._root[0][1]
+
+    @property
+    def xmax(self):
+        return self._root[0][2]
+
+    @property
+    def ymax(self):
+        return self._root[0][3]
+
+    @property
+    def height(self):
+        return self._root[3]
+
+    @property
+    def empty(self):
+        return len(self._root[1]) == 0
 
     def insert(self, xmin, ymin, xmax, ymax, data):
         """
@@ -92,10 +91,11 @@ class RBush(object):
             print(msg)
             return self
 
-        arr = np.array([xmin, ymin, xmax, ymax]).T
-
-        root = self.load(arr, data)
-        self._root = root
+        # root = insert(self._root, xmin, ymin, xmax, ymax, data,
+        #               maxentries=self.maxentries, minentries=self.minentries)
+        # self._root = root
+        arr = np.array([xmin, ymin, xmax, ymax], dtype=float).T
+        self.load(arr)
         return self
 
     def load(self, arr, data=None):
@@ -151,6 +151,15 @@ class RBush(object):
         items = search(self._root, box)
         return items
 
+    def remove(self, xmin, ymin, xmax, ymax):
+        """
+        Remove and return removed items matching 'xmin,ymin,xmax,ymax'
+        """
+        items = remove(self._root, xmin, ymin, xmax, ymax)
+        if self.empty:
+            self.clear()
+        return items
+
 #     def to_json(self, indent=2):
 #         return to_json(self._root, indent)
 #
@@ -162,20 +171,20 @@ class RBush(object):
 
 
 #def to_dict(node):
-#    content = dict(xmin=xminf(node),
-#                   ymin=yminf(node),
-#                   xmax=xmaxf(node),
-#                   ymax=ymaxf(node))
-#    content['leaf'] = leaff(node)
-#    content['height'] = heightf(node)
+#    content = dict(xmin=node[0][0],
+#                   ymin=node[0][1],
+#                   xmax=node[0][2],
+#                   ymax=node)[0][3]
+#    content['leaf'] = node[3]
+#    content['height'] = node[3]
 #    children = []
-#    if leaff(node) is False:
-#        for i in range(len(childrenf(node))):
-#            child = get(childrenf(node), i)
+#    if node[3] is False:
+#        for i in range(len(node))[3]:
+#            child = get(node), i[3]
 #            children.append(to_dict(child))
 #    else:
-#        for i in range(len(childrenf(node))):
-#            child = get(childrenf(node), i)
+#        for i in range(len(node))[3]:
+#            child = get(node), i[3]
 #            children.append(child)
 #    content['children'] = children
 #    return content
