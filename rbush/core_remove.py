@@ -1,4 +1,4 @@
-from _python import INF, create_node
+from ._python import INF, create_node
 
 
 def remove(root, xmin, ymin, xmax, ymax):
